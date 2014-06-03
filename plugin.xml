@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        id="nl.x-services.plugins.healthkit"
+        version="0.0.1">
+
+  <name>HealthKit</name>
+
+  <description>
+    Interact with the new iOS8 HealthKit SDK
+  </description>
+
+  <license>MIT</license>
+
+  <engines>
+    <engine name="cordova" version=">=3.0.0"/>
+  </engines>
+
+  <js-module src="www/HealthKit.js" name="HealthKit">
+    <clobbers target="window.plugins.healthkit" />
+  </js-module>
+
+  <!-- ios -->
+  <platform name="ios">
+
+    <config-file target="config.xml" parent="/*">
+      <feature name="HealthKit">
+        <param name="ios-package" value="HealthKit"/>
+      </feature>
+    </config-file>
+
+    <header-file src="src/ios/HealthKit.h"/>
+    <source-file src="src/ios/HealthKit.m"/>
+  </platform>
+
+</plugin>
