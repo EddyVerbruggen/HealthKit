@@ -1,21 +1,25 @@
-function Insomnia() {
+function HealthKit() {
 }
 
-Insomnia.prototype.keepAwake = function (successCallback, errorCallback) {
-  cordova.exec(successCallback, errorCallback, "Insomnia", "keepAwake", []);
+HealthKit.prototype.available = function (successCallback, errorCallback) {
+  cordova.exec(successCallback, errorCallback, "HealthKit", "available", []);
 };
 
-Insomnia.prototype.allowSleepAgain = function (successCallback, errorCallback) {
-  cordova.exec(successCallback, errorCallback, "Insomnia", "allowSleepAgain", []);
+HealthKit.prototype.saveWeight = function (successCallback, errorCallback) {
+  cordova.exec(successCallback, errorCallback, "HealthKit", "saveWeight", []);
 };
 
-Insomnia.install = function () {
+HealthKit.prototype.readWeight = function (successCallback, errorCallback) {
+  cordova.exec(successCallback, errorCallback, "HealthKit", "readWeight", []);
+};
+
+HealthKit.install = function () {
   if (!window.plugins) {
     window.plugins = {};
   }
 
-  window.plugins.insomnia = new Insomnia();
-  return window.plugins.insomnia;
+  window.plugins.healthkit = new HealthKit();
+  return window.plugins.healthkit;
 };
 
-cordova.addConstructor(Insomnia.install);
+cordova.addConstructor(HealthKit.install);

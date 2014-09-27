@@ -2,6 +2,8 @@
 
 @interface HealthKit :CDVPlugin
 
-- (void) testMethod:(CDVInvokedUrlCommand*)command;
+- (void) available:(CDVInvokedUrlCommand*)command;
+- (void) saveWeight:(CDVInvokedUrlCommand*)command;
+- (void) readWeight:(CDVInvokedUrlCommand*)command;
 
 @end
