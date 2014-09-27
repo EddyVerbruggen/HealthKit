@@ -33,19 +33,14 @@
   <div id="deviceready" class="blink">
     <p class="event listening">Connecting to Device</p>
     <p class="event received">Device is Ready</p><br/>
-    <button onclick="available()">available</button><br/><br/>
-    <button onclick="saveWeight()">Save Weight</button><br/><br/>
-    <button onclick="readWeight()">Read Weight</button><br/><br/>
+    <button onclick="available()">available?</button><br/><br/>
+    <button onclick="saveWeight()">Save Weight (80.4 kg)</button><br/><br/>
+    <button onclick="readWeight()">Read Most Recent Weight</button><br/><br/>
   </div>
 </div>
 <script type="text/javascript" src="cordova.js"></script>
 <script type="text/javascript" src="js/index.js"></script>
 <script type="text/javascript">
-
-  window.onerror = function(a,b,c) {
-    alert(a);
-    alert(c);
-  }
 
   app.initialize();
 

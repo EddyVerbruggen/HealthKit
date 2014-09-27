@@ -14,7 +14,7 @@
 
 - (void) available:(CDVInvokedUrlCommand*)command {
   CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:[HKHealthStore isHealthDataAvailable]];
-  [self writeJavascript:[result toSuccessCallbackString:command.callbackId]];
+  [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
 }
 
 /*
@@ -30,18 +30,18 @@
       if (success) {
         dispatch_sync(dispatch_get_main_queue(), ^{
           CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-          [self writeJavascript:[result toSuccessCallbackString:callbackId]];
+          [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
         });
       } else {
         dispatch_sync(dispatch_get_main_queue(), ^{
           CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
-          [self writeJavascript:[result toErrorCallbackString:callbackId]];
+          [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
         });
       }
     }];
   } else {
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"healthkit not available"];
-    [self writeJavascript:[result toSuccessCallbackString:callbackId]];
+    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
   }
 }
 */
@@ -50,9 +50,7 @@
 // if status = denied, prompt user to go to setting
 
 - (void) saveWeight:(CDVInvokedUrlCommand*)command {
-  NSString *callbackId = command.callbackId;
-  double weight = 80500; // 80,5 kg
-  
+  double weight = 80400; // 80,4 kg
   HKQuantityType *weightType = [HKQuantityType quantityTypeForIdentifier:HKQuantityTypeIdentifierBodyMass];
   NSSet *requestTypes = [NSSet setWithObjects: weightType, nil];
   [self.healthStore requestAuthorizationToShareTypes:requestTypes readTypes:requestTypes completion:^(BOOL success, NSError *error) {
@@ -65,28 +63,25 @@
         if (success) {
           dispatch_sync(dispatch_get_main_queue(), ^{
             CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-            [self writeJavascript:[result toSuccessCallbackString:callbackId]];
+            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
           });
         } else {
           dispatch_sync(dispatch_get_main_queue(), ^{
             CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorInner.localizedDescription];
-            [self writeJavascript:[result toErrorCallbackString:callbackId]];
+            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
           });
         }
       }];
     } else {
       dispatch_sync(dispatch_get_main_queue(), ^{
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
-        [self writeJavascript:[result toErrorCallbackString:callbackId]];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
       });
     }
   }];
 }
 
 - (void) readWeight:(CDVInvokedUrlCommand*)command {
-  NSString *callbackId = command.callbackId;
-
-  // Query to get the user's latest weight, if it exists.
   HKQuantityType *weightType = [HKQuantityType quantityTypeForIdentifier:HKQuantityTypeIdentifierBodyMass];
   NSSet *requestTypes = [NSSet setWithObjects: weightType, nil];
   // always ask for read and write permission if the app uses both, because granting read will remove write for the same type :(
@@ -99,19 +94,19 @@
           double usersWeight = [mostRecentQuantity doubleValueForUnit:weightUnit];
           dispatch_async(dispatch_get_main_queue(), ^{
             CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDouble:usersWeight];
-            [self writeJavascript:[result toSuccessCallbackString:callbackId]];
+            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
           });
         } else {
           dispatch_async(dispatch_get_main_queue(), ^{
             CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorInner.localizedDescription];
-            [self writeJavascript:[result toErrorCallbackString:callbackId]];
+            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
           });
         }
       }];
     } else {
       dispatch_sync(dispatch_get_main_queue(), ^{
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
-        [self writeJavascript:[result toErrorCallbackString:callbackId]];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
       });
     }
   }];
