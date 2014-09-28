@@ -46,17 +46,35 @@
 }
 */
 
-// TODO method to check this: HKAuthorizationStatus status = [self.healthStore authorizationStatusForType:<the type>];
-// if status = denied, prompt user to go to setting
+- (void) checkAuthStatus:(CDVInvokedUrlCommand*)command {
+  // TODO method to check this: HKAuthorizationStatus status = [self.healthStore authorizationStatusForType:<the type>];
+  // if status = denied, prompt user to go to settings
+}
+
+- (void) saveWorkout:(CDVInvokedUrlCommand*)command {
+}
 
 - (void) saveWeight:(CDVInvokedUrlCommand*)command {
-  double weight = 80400; // 80,4 kg
+  NSMutableDictionary *args = [command.arguments objectAtIndex:0];
+  NSString *unit = [args objectForKey:@"unit"];
+  NSNumber *amount = [args objectForKey:@"amount"];
+  
+  if (amount == nil) {
+    // TODO error callback
+    return;
+  }
+  
+  HKUnit *localUnit = [HKUnit unitFromString:unit];
+  if (localUnit == nil) {
+    // TODO error callback
+    return;
+  }
+  
   HKQuantityType *weightType = [HKQuantityType quantityTypeForIdentifier:HKQuantityTypeIdentifierBodyMass];
   NSSet *requestTypes = [NSSet setWithObjects: weightType, nil];
   [self.healthStore requestAuthorizationToShareTypes:requestTypes readTypes:requestTypes completion:^(BOOL success, NSError *error) {
     if (success) {
-      HKUnit *localUnit = [HKUnit gramUnit]; // TODO pass in type: gram, pound, stone
-      HKQuantity *weightQuantity = [HKQuantity quantityWithUnit:localUnit doubleValue:weight];
+      HKQuantity *weightQuantity = [HKQuantity quantityWithUnit:localUnit doubleValue:[amount doubleValue]];
       NSDate *now = [NSDate date]; // TODO pass in
       HKQuantitySample *weightSample = [HKQuantitySample quantitySampleWithType:weightType quantity:weightQuantity startDate:now endDate:now];
       [self.healthStore saveObject:weightSample withCompletion:^(BOOL success, NSError* errorInner) {
@@ -82,6 +100,16 @@
 }
 
 - (void) readWeight:(CDVInvokedUrlCommand*)command {
+  NSMutableDictionary *args = [command.arguments objectAtIndex:0];
+  NSString *unit = [args objectForKey:@"unit"];
+  
+  HKUnit *localUnit = [HKUnit unitFromString:unit];
+  if (localUnit == nil) {
+    // TODO error callback
+    return;
+  }
+
+  // Query to get the user's latest weight, if it exists.
   HKQuantityType *weightType = [HKQuantityType quantityTypeForIdentifier:HKQuantityTypeIdentifierBodyMass];
   NSSet *requestTypes = [NSSet setWithObjects: weightType, nil];
   // always ask for read and write permission if the app uses both, because granting read will remove write for the same type :(
@@ -89,9 +117,7 @@
     if (success) {
       [self.healthStore aapl_mostRecentQuantitySampleOfType:weightType predicate:nil completion:^(HKQuantity *mostRecentQuantity, NSError *errorInner) {
         if (mostRecentQuantity) {
-          // TODO pass in type of unit to convert to: gram, pound, stone
-          HKUnit *weightUnit = [HKUnit gramUnit];
-          double usersWeight = [mostRecentQuantity doubleValueForUnit:weightUnit];
+          double usersWeight = [mostRecentQuantity doubleValueForUnit:localUnit];
           dispatch_async(dispatch_get_main_queue(), ^{
             CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDouble:usersWeight];
             [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
