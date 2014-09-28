@@ -52,6 +52,28 @@
 }
 
 - (void) saveWorkout:(CDVInvokedUrlCommand*)command {
+  NSMutableDictionary *args = [command.arguments objectAtIndex:0];
+
+  NSDate *start = [NSDate date]; // TODO pass in
+  NSDate *end = [NSDate date]; // TODO pass in
+  
+  // TODO pass in workoutactivity
+  HKWorkout *workout = [HKWorkout workoutWithActivityType:HKWorkoutActivityTypeRunning startDate:start endDate:end];
+  NSArray *samples = [NSArray init];
+  
+  [self.healthStore addSamples:samples toWorkout:workout completion:^(BOOL success, NSError *error) {
+    if (success) {
+      dispatch_sync(dispatch_get_main_queue(), ^{
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+      });
+    } else {
+      dispatch_sync(dispatch_get_main_queue(), ^{
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+      });
+    }
+  }];
 }
 
 - (void) saveWeight:(CDVInvokedUrlCommand*)command {
@@ -95,6 +117,32 @@
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
         [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
       });
+    }
+  }];
+}
+
+// TODO, copy-paste from birthdate
+- (void) readGender:(CDVInvokedUrlCommand*)command {
+//  HKCharacteristicType *biologicalSexType = [HKObjectType characteristicTypeForIdentifier:HKCharacteristicTypeIdentifierBiologicalSex];
+}
+
+- (void) readDateOfBirth:(CDVInvokedUrlCommand*)command {
+  // TODO pass in dateformat?
+  NSDateFormatter *df = [[NSDateFormatter alloc] init];
+  [df setDateFormat:@"yyyy-MM-dd"];
+  
+  HKCharacteristicType *birthdayType = [HKObjectType characteristicTypeForIdentifier:HKCharacteristicTypeIdentifierDateOfBirth];
+  NSSet *requestTypes = [NSSet setWithObjects: birthdayType, nil];
+  [self.healthStore requestAuthorizationToShareTypes:nil readTypes:requestTypes completion:^(BOOL success, NSError *error) {
+    if (success) {
+      NSDate *dateOfBirth = [self.healthStore dateOfBirthWithError:&error];
+      if (dateOfBirth) {
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[df stringFromDate:dateOfBirth]];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+      } else {
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+      }
     }
   }];
 }

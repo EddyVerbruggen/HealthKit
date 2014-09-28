@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <!--
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-     KIND, either express or implied.  See the License for the
-    specific language governing permissions and limitations
-    under the License.
--->
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+ http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ -->
 <html>
 <head>
   <meta charset="utf-8"/>
@@ -37,9 +37,13 @@
     <p class="event received">Device is Ready</p><br/>
     <button onclick="available()">Health data available?</button>
     <br/><br/>
+    <button onclick="readDateOfBirth()">Read date of birth</button>
+    <br/><br/>
     <button onclick="saveWeight()">Save Weight</button>
     <br/><br/>
     <button onclick="readWeight()">Read Weight</button>
+    <br/><br/>
+    <button onclick="saveWorkout()">Save Workout</button>
     <br/><br/>
   </div>
 </div>
@@ -67,6 +71,13 @@
     );
   }
 
+  function readDateOfBirth() {
+    window.plugins.healthkit.readDateOfBirth(
+        callback,
+        callback
+    );
+  }
+
   function saveWeight() {
     window.plugins.healthkit.saveWeight({
           'unit': 'g',
@@ -79,6 +90,15 @@
 
   function readWeight() {
     window.plugins.healthkit.readWeight({
+          'unit': 'g'
+        },
+        callback,
+        callback
+    );
+  }
+
+  function saveWorkout() {
+    window.plugins.healthkit.saveWorkout({
           'unit': 'g'
         },
         callback,
