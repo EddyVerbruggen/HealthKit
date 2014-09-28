@@ -5,12 +5,17 @@
   </tr>
 </table>
 
-by [Eddy Verbruggen](http://www.x-services.nl)
+by [Eddy Verbruggen](https://twitter.com/eddyverbruggen)
 
 
-DO NOT USE (yet) - This is in an experimental stage!
+## Work in progress
+Work in progress, things may break if you use this now. Supported functions:
 
-Make sure your app id has the 'HealthKit' entitlement when this plugin is installed.
+* available
+* saveWeight
+* readWeight
 
-Also, make sure your app and AppStore description complies with these Apple review guidelines: https://developer.apple.com/app-store/review/guidelines/#healthkit
 
+## Tips
+*Make sure your app id has the 'HealthKit' entitlement when this plugin is installed.
+*Also, make sure your app and AppStore description complies with these Apple review guidelines: https://developer.apple.com/app-store/review/guidelines/#healthkit
