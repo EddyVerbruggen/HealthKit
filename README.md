@@ -7,18 +7,19 @@ by [Eddy Verbruggen](https://twitter.com/eddyverbruggen)
 ## Work in progress
 Things may break if you use this now.
 
-Supported functions:
-
+### Supported functions:
 * available: check if HealthKit is supported (iOS8+, not on iPad)
-* readDateOfBirth: yyyy-MM-dd formatted
-* saveWeight: pass in unit (g=grams, oz=ounces, lb=pounds, st=stones) and amount
+* readDateOfBirth: formatted as yyyy-MM-dd
+* readGender: output = male|female|unknown
 * readWeight: pass in unit
+* saveWeight: pass in unit (g=grams, kg=kilograms, oz=ounces, lb=pounds, st=stones) and amount
 
-Planned functions:
-
+### Currently in progress:
 * saveWorkout
-* saveHeight
+
+### Planned functions:
 * readHeight
+* saveHeight
 * requestPermission(s)
 * .. wishes? plz create an issue with your feature request
 

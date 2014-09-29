@@ -37,10 +37,12 @@
     <p class="event received">Device is Ready</p><br/>
     <button onclick="available()">Health data available?</button>
     <br/><br/>
-    <button onclick="readDateOfBirth()">Read date of birth</button>
+    <button onclick="readDateOfBirth()">Read birthdate</button>
+    &nbsp;&nbsp;
+    <button onclick="readGender()">Read gender</button>
     <br/><br/>
     <button onclick="saveWeight()">Save Weight</button>
-    <br/><br/>
+    &nbsp;&nbsp;
     <button onclick="readWeight()">Read Weight</button>
     <br/><br/>
     <button onclick="saveWorkout()">Save Workout</button>
@@ -78,10 +80,17 @@
     );
   }
 
+  function readGender() {
+    window.plugins.healthkit.readGender(
+        callback,
+        callback
+    );
+  }
+
   function saveWeight() {
     window.plugins.healthkit.saveWeight({
-          'unit': 'g',
-          'amount': 79500
+          'unit': 'kg',
+          'amount': 78.5
         },
         callback,
         callback
@@ -90,7 +99,7 @@
 
   function readWeight() {
     window.plugins.healthkit.readWeight({
-          'unit': 'g'
+          'unit': 'kg'
         },
         callback,
         callback
@@ -99,7 +108,14 @@
 
   function saveWorkout() {
     window.plugins.healthkit.saveWorkout({
-          'unit': 'g'
+          'activityType': 'HKWorkoutActivityTypeCycling', // HKWorkoutActivityType constant (https://developer.apple.com/library/ios/documentation/HealthKit/Reference/HKWorkout_Class/#//apple_ref/c/tdef/HKWorkoutActivityType)
+          'startDate': new Date(), // mandatory
+          'endDate': null, // optional, use either this or duration
+          'duration': 1800, // in seconds?, optional, use either this or endDate
+          'caloriesBurned': 100, // in calories, optional
+          'distance': 2000, // in meters?, optional
+          'distanceUnit': 'm' // probably useful with the former param
+//                                           'extraData': "", // Not sure how necessary this is
         },
         callback,
         callback

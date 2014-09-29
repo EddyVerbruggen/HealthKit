@@ -8,6 +8,7 @@
 - (void) available:(CDVInvokedUrlCommand*)command;
 
 - (void) readDateOfBirth:(CDVInvokedUrlCommand*)command;
+- (void) readGender:(CDVInvokedUrlCommand*)command;
 
 - (void) saveWeight:(CDVInvokedUrlCommand*)command;
 - (void) readWeight:(CDVInvokedUrlCommand*)command;

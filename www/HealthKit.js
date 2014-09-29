@@ -9,6 +9,10 @@ HealthKit.prototype.readDateOfBirth = function (successCallback, errorCallback) 
   cordova.exec(successCallback, errorCallback, "HealthKit", "readDateOfBirth", []);
 };
 
+HealthKit.prototype.readGender = function (successCallback, errorCallback) {
+  cordova.exec(successCallback, errorCallback, "HealthKit", "readGender", []);
+};
+
 HealthKit.prototype.saveWeight = function (options, successCallback, errorCallback) {
   cordova.exec(successCallback, errorCallback, "HealthKit", "saveWeight", [options]);
 };
@@ -18,7 +22,18 @@ HealthKit.prototype.readWeight = function (options, successCallback, errorCallba
 };
 
 HealthKit.prototype.saveWorkout = function (options, successCallback, errorCallback) {
-  cordova.exec(successCallback, errorCallback, "HealthKit", "saveWorkout", [options]);
+  if (!options.startDate instanceof Date) {
+    errorCallback("startDate must be a JavaScript Date Object");
+    return;
+  }
+  if (!(options.endDate instanceof Date || options.duration > 0)) {
+    errorCallback("endDate must be JavaScript Date Object, or the duration must be set");
+    return;
+  }
+  var opts = options || {};
+  opts.startTime = options.startDate.getTime();
+  opts.endTime = options.endDate == null ? null : options.endDate.getTime();
+  cordova.exec(successCallback, errorCallback, "HealthKit", "saveWorkout", [opts]);
 };
 
 HealthKit.install = function () {
