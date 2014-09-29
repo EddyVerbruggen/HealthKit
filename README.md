@@ -19,6 +19,7 @@ Planned functions:
 * saveWorkout
 * saveHeight
 * readHeight
+* requestPermission(s)
 * .. wishes? plz create an issue with your feature request
 
 ## Tips
