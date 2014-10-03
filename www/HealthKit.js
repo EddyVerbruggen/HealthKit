@@ -21,6 +21,10 @@ HealthKit.prototype.readWeight = function (options, successCallback, errorCallba
   cordova.exec(successCallback, errorCallback, "HealthKit", "readWeight", [options]);
 };
 
+HealthKit.prototype.findWorkouts = function (options, successCallback, errorCallback) {
+  cordova.exec(successCallback, errorCallback, "HealthKit", "findWorkouts", [options]);
+};
+
 HealthKit.prototype.saveWorkout = function (options, successCallback, errorCallback) {
   if (!options.startDate instanceof Date) {
     errorCallback("startDate must be a JavaScript Date Object");

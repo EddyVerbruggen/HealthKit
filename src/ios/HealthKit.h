@@ -14,5 +14,6 @@
 - (void) readWeight:(CDVInvokedUrlCommand*)command;
 
 - (void) saveWorkout:(CDVInvokedUrlCommand*)command;
+- (void) findWorkouts:(CDVInvokedUrlCommand*)command;
 
 @end

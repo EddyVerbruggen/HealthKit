@@ -53,13 +53,42 @@
 
 - (void) saveWorkout:(CDVInvokedUrlCommand*)command {
   NSMutableDictionary *args = [command.arguments objectAtIndex:0];
+
   NSString *activityType = [args objectForKey:@"activityType"];
-
+  // TODO check validity of this enum
+  //  HKWorkoutActivityType activityTypeEnum = HKWorkoutActivityTypeCycling;
   HKWorkoutActivityType activityTypeEnum = (HKWorkoutActivityType) activityType;
-  // TODO check validity of enum
   
-  int duration = 0;
 
+  // optional energy
+  NSNumber *energy = [args objectForKey:@"energy"];
+  NSString *energyUnit = [args objectForKey:@"energyUnit"];
+  HKQuantity *nrOfEnergyUnits = nil;
+  if (energy != nil) {
+    HKUnit *preferredEnergyUnit = [self getUnit:energyUnit:@"HKEnergyUnit"];
+    if (preferredEnergyUnit == nil) {
+      CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"invalid energyUnit was passed"];
+      [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+      return;
+    }
+    nrOfEnergyUnits = [HKQuantity quantityWithUnit:preferredEnergyUnit doubleValue:energy.doubleValue];
+  }
+  
+  // optional distance
+  NSNumber *distance = [args objectForKey:@"distance"];
+  NSString *distanceUnit = [args objectForKey:@"distanceUnit"];
+  HKQuantity *nrOfDistanceUnits = nil;
+  if (distance != nil) {
+    HKUnit *preferredDistanceUnit = [self getUnit:distanceUnit:@"HKLengthUnit"];
+    if (preferredDistanceUnit == nil) {
+      CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"invalid distanceUnit was passed"];
+      [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+      return;
+    }
+    nrOfDistanceUnits = [HKQuantity quantityWithUnit:preferredDistanceUnit doubleValue:distance.doubleValue];
+  }
+
+  int duration = 0;
   NSNumber* startTime  = [args objectForKey:@"startTime"];
   NSTimeInterval _startInterval = [startTime doubleValue] / 1000; // strip millis
   NSDate *startDate = [NSDate dateWithTimeIntervalSince1970:_startInterval];
@@ -77,47 +106,53 @@
     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
     return;
   }
-  
-//  HKUnit *joulesUnit = [HKUnit unitFromString:@"J"];
-//  HKQuantity *nrOfJoules = [HKQuantity quantityWithUnit:joulesUnit doubleValue:101.5];
-  HKUnit *energyUnit = [HKUnit calorieUnit];
-  HKQuantity *nrOfEnergyUnits = [HKQuantity quantityWithUnit:energyUnit doubleValue:4500];
 
-  HKUnit *metersUnit = [HKUnit unitFromString:@"m"];
-  HKQuantity *nrOfMeters = [HKQuantity quantityWithUnit:metersUnit doubleValue:1500.0];
 
-  NSSet *types = [NSSet setWithObjects:[HKWorkoutType workoutType], [HKQuantityType quantityTypeForIdentifier:HKQuantityTypeIdentifierActiveEnergyBurned], nil];
+  NSSet *types = [NSSet setWithObjects:[HKWorkoutType workoutType], [HKQuantityType quantityTypeForIdentifier:HKQuantityTypeIdentifierActiveEnergyBurned], [HKQuantityType quantityTypeForIdentifier:HKQuantityTypeIdentifierDistanceCycling], nil]; // TODO hardcoded
   [self.healthStore requestAuthorizationToShareTypes:types readTypes:nil completion:^(BOOL success, NSError *error) {
-    if (success) {
+    if (!success) {
+      dispatch_sync(dispatch_get_main_queue(), ^{
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+      });
+    } else {
       HKWorkout *workout = [HKWorkout workoutWithActivityType:activityTypeEnum
                                                     startDate:startDate
                                                       endDate:endDate
-                                                     duration:duration
-                                            totalEnergyBurned:nrOfEnergyUnits // TODO set if passed
-                                                totalDistance:nrOfMeters // TODO set if passed
+                                                     duration:0 // the diff between start and end is used
+                                            totalEnergyBurned:nrOfEnergyUnits
+                                                totalDistance:nrOfDistanceUnits
                                                      metadata:nil]; // TODO find out if needed
       [self.healthStore saveObject:workout withCompletion:^(BOOL success, NSError *innerError) {
         if (success) {
           // now store the samples, so it shows up in the health app as well (pass this in as an option?)
-          HKQuantitySample *sample = [HKQuantitySample quantitySampleWithType:[HKQuantityType quantityTypeForIdentifier:HKQuantityTypeIdentifierActiveEnergyBurned]
-                                                                     quantity:nrOfEnergyUnits
+          if (energy != nil) {
+            HKQuantitySample *sampleActivity = [HKQuantitySample quantitySampleWithType:[HKQuantityType quantityTypeForIdentifier:
+                                                                                  HKQuantityTypeIdentifierDistanceCycling] // TODO hardcoded
+                                                                     quantity:nrOfDistanceUnits
                                                                     startDate:startDate
                                                                       endDate:endDate];
-          NSArray *samples = [NSArray arrayWithObject:sample];
+            HKQuantitySample *sampleCalories = [HKQuantitySample quantitySampleWithType:[HKQuantityType quantityTypeForIdentifier:
+                                                                                 HKQuantityTypeIdentifierActiveEnergyBurned]
+                                                                       quantity:nrOfEnergyUnits
+                                                                      startDate:startDate
+                                                                        endDate:endDate];
+            NSArray *samples = [NSArray arrayWithObjects:sampleActivity, sampleCalories, nil];
           
-          [self.healthStore addSamples:samples toWorkout:workout completion:^(BOOL success, NSError *mostInnerError) {
-            if (success) {
-              dispatch_sync(dispatch_get_main_queue(), ^{
-                CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-                [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
-              });
-            } else {
-              dispatch_sync(dispatch_get_main_queue(), ^{
-                CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:mostInnerError.localizedDescription];
-                [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
-              });
-            }
-          }];
+            [self.healthStore addSamples:samples toWorkout:workout completion:^(BOOL success, NSError *mostInnerError) {
+              if (success) {
+                dispatch_sync(dispatch_get_main_queue(), ^{
+                  CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+                  [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+                });
+              } else {
+                dispatch_sync(dispatch_get_main_queue(), ^{
+                  CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR  messageAsString:mostInnerError.localizedDescription];
+                  [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+                });
+              }
+            }];
+          }
         } else {
           dispatch_sync(dispatch_get_main_queue(), ^{
             CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:innerError.localizedDescription];
@@ -125,6 +160,27 @@
           });
         }
       }];
+    }
+  }];
+}
+
+- (void) findWorkouts:(CDVInvokedUrlCommand*)command {
+  NSPredicate *workout = [HKQuery predicateForWorkoutsWithWorkoutActivityType:HKWorkoutActivityTypeCycling];
+//  NSPredicate *explicitWorkout = [NSPredicate predicateWithFormat:@"%K == %d", HKPredicateKeyPathWorkoutType, HKWorkoutActivityTypeCycling];
+  HKSampleQuery *q = [HKSampleQuery alloc];
+  [q initWithSampleType:[HKWorkoutType workoutType] predicate:workout limit:2 sortDescriptors:nil resultsHandler:^(HKSampleQuery *query, NSArray *results, NSError *error) {
+    if (error) {
+      dispatch_sync(dispatch_get_main_queue(), ^{
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR  messageAsString:error.localizedDescription];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+      });
+    } else {
+      int *nr = results.count;
+      NSString *debugdesc = query.debugDescription;
+      dispatch_sync(dispatch_get_main_queue(), ^{
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+      });
     }
   }];
 }
@@ -245,7 +301,6 @@
   }];
 }
 
-// TODO, copy-paste from birthdate
 - (void) readGender:(CDVInvokedUrlCommand*)command {
   HKCharacteristicType *genderType = [HKObjectType characteristicTypeForIdentifier:HKCharacteristicTypeIdentifierBiologicalSex];
   [self.healthStore requestAuthorizationToShareTypes:nil readTypes:[NSSet setWithObjects: genderType, nil] completion:^(BOOL success, NSError *error) {
