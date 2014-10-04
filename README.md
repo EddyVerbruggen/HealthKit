@@ -9,6 +9,7 @@ Things may break if you use this now.
 
 ### Supported functions:
 * available: check if HealthKit is supported (iOS8+, not on iPad)
+* requestAuthorization: ask some or all permissions up front 
 * readDateOfBirth: formatted as yyyy-MM-dd
 * readGender: output = male|female|unknown
 * readWeight: pass in unit
@@ -20,7 +21,6 @@ Things may break if you use this now.
 ### Planned functions:
 * readHeight
 * saveHeight
-* requestPermission(s)
 * .. wishes? plz create an issue with your feature request
 
 ## Tips

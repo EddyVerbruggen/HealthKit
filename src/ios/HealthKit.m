@@ -17,34 +17,53 @@
   [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
 }
 
-/*
-- (void) requestPermission:(CDVInvokedUrlCommand*)command {
-  NSString *callbackId = command.callbackId;
+- (void) requestAuthorization:(CDVInvokedUrlCommand*)command {
+  NSMutableDictionary *args = [command.arguments objectAtIndex:0];
   
-  if ([HKHealthStore isHealthDataAvailable]) {
-    NSSet *writeDataTypes = [self dataTypesToWrite];
-    NSSet *readDataTypes = [self dataTypesToRead];
-  
-    // TODO this should be an internal method, or allow passing in stuff for advanced users
-    [self.healthStore requestAuthorizationToShareTypes:writeDataTypes readTypes:readDataTypes completion:^(BOOL success, NSError *error) {
-      if (success) {
-        dispatch_sync(dispatch_get_main_queue(), ^{
-          CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-          [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
-        });
-      } else {
-        dispatch_sync(dispatch_get_main_queue(), ^{
-          CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
-          [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
-        });
-      }
-    }];
-  } else {
-    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"healthkit not available"];
-    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+  // read types
+  NSArray *readTypes = [args objectForKey:@"readTypes"];
+  NSSet *readDataTypes = [[NSSet alloc] init];
+  for (int i=0; i<[readTypes count]; i++) {
+    NSString *elem = [readTypes objectAtIndex:i];
+    HKObjectType *type = [self getCategoryType:elem];
+    if (type == nil) {
+      CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"readTypes contains an invalid value"];
+      [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+      // not returning deliberately to be future proof; other permissions are still asked
+    } else {
+      readDataTypes = [readDataTypes setByAddingObject:type];
+    }
   }
+
+  // write types
+  NSArray *writeTypes = [args objectForKey:@"writeTypes"];
+  NSSet *writeDataTypes = [[NSSet alloc] init];
+  for (int i=0; i<[writeTypes count]; i++) {
+    NSString *elem = [writeTypes objectAtIndex:i];
+    HKObjectType *type = [self getCategoryType:elem];
+    if (type == nil) {
+      CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"writeTypes contains an invalid value"];
+      [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+      // not returning deliberately to be future proof; other permissions are still asked
+    } else {
+      writeDataTypes = [writeDataTypes setByAddingObject:type];
+    }
+  }
+
+  [self.healthStore requestAuthorizationToShareTypes:writeDataTypes readTypes:readDataTypes completion:^(BOOL success, NSError *error) {
+    if (success) {
+      dispatch_sync(dispatch_get_main_queue(), ^{
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+          [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+      });
+    } else {
+      dispatch_sync(dispatch_get_main_queue(), ^{
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+      });
+    }
+  }];
 }
-*/
 
 - (void) checkAuthStatus:(CDVInvokedUrlCommand*)command {
   // TODO method to check this: HKAuthorizationStatus status = [self.healthStore authorizationStatusForType:<the type>];
@@ -55,6 +74,8 @@
   NSMutableDictionary *args = [command.arguments objectAtIndex:0];
 
   NSString *activityType = [args objectForKey:@"activityType"];
+  NSString *quantityType = [args objectForKey:@"quantityType"]; // TODO verify this value
+  
   // TODO check validity of this enum
   //  HKWorkoutActivityType activityTypeEnum = HKWorkoutActivityTypeCycling;
   HKWorkoutActivityType activityTypeEnum = (HKWorkoutActivityType) activityType;
@@ -108,7 +129,7 @@
   }
 
 
-  NSSet *types = [NSSet setWithObjects:[HKWorkoutType workoutType], [HKQuantityType quantityTypeForIdentifier:HKQuantityTypeIdentifierActiveEnergyBurned], [HKQuantityType quantityTypeForIdentifier:HKQuantityTypeIdentifierDistanceCycling], nil]; // TODO hardcoded
+  NSSet *types = [NSSet setWithObjects:[HKWorkoutType workoutType], [HKQuantityType quantityTypeForIdentifier:HKQuantityTypeIdentifierActiveEnergyBurned], [HKQuantityType quantityTypeForIdentifier:quantityType], nil];
   [self.healthStore requestAuthorizationToShareTypes:types readTypes:nil completion:^(BOOL success, NSError *error) {
     if (!success) {
       dispatch_sync(dispatch_get_main_queue(), ^{
@@ -128,7 +149,7 @@
           // now store the samples, so it shows up in the health app as well (pass this in as an option?)
           if (energy != nil) {
             HKQuantitySample *sampleActivity = [HKQuantitySample quantitySampleWithType:[HKQuantityType quantityTypeForIdentifier:
-                                                                                  HKQuantityTypeIdentifierDistanceCycling] // TODO hardcoded
+                                                                                  quantityType] // TODO hardcoded
                                                                      quantity:nrOfDistanceUnits
                                                                     startDate:startDate
                                                                       endDate:endDate];
@@ -358,6 +379,25 @@
   }
 }
 
+- (HKCategoryType*) getCategoryType:(NSString*) elem {
+  HKObjectType *type = [HKObjectType quantityTypeForIdentifier:elem];
+  if (type == nil) {
+    type = [HKObjectType characteristicTypeForIdentifier:elem];
+  }
+  if (type == nil) {
+    type = [HKObjectType categoryTypeForIdentifier:elem];
+  }
+  if (type == nil) {
+    type = [HKObjectType categoryTypeForIdentifier:elem];
+  }
+  if (type == nil) {
+    type = [HKObjectType correlationTypeForIdentifier:elem];
+  }
+  if (type == nil && [elem isEqualToString:@"workoutType"]) {
+    type = [HKObjectType workoutType];
+  }
+  return type;
+}
 
 /*
 #pragma mark - HealthKit Permissions

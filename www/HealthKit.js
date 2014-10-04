@@ -5,6 +5,10 @@ HealthKit.prototype.available = function (successCallback, errorCallback) {
   cordova.exec(successCallback, errorCallback, "HealthKit", "available", []);
 };
 
+HealthKit.prototype.requestAuthorization = function (options, successCallback, errorCallback) {
+  cordova.exec(successCallback, errorCallback, "HealthKit", "requestAuthorization", [options]);
+};
+
 HealthKit.prototype.readDateOfBirth = function (successCallback, errorCallback) {
   cordova.exec(successCallback, errorCallback, "HealthKit", "readDateOfBirth", []);
 };

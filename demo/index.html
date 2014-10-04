@@ -35,7 +35,9 @@
     <p class="event listening">Connecting to Device</p>
 
     <p class="event received">Device is Ready</p><br/>
-    <button onclick="available()">Health data available?</button>
+    <button onclick="available()">Health available?</button>
+    &nbsp;&nbsp;
+    <button onclick="requestAuthorization()">Request auth</button>
     <br/><br/>
     <button onclick="readDateOfBirth()">Read birthdate</button>
     &nbsp;&nbsp;
@@ -74,6 +76,18 @@
         callback
     );
   }
+
+  function requestAuthorization() {
+    window.plugins.healthkit.requestAuthorization(
+        {
+          'readTypes'  : ['HKCharacteristicTypeIdentifierDateOfBirth', 'HKQuantityTypeIdentifierActiveEnergyBurned', 'HKQuantityTypeIdentifierHeight'],
+          'writeTypes' : ['HKQuantityTypeIdentifierActiveEnergyBurned', 'HKQuantityTypeIdentifierHeight', 'HKQuantityTypeIdentifierDistanceCycling']
+        },
+        callback,
+        callback
+    );
+  }
+
 
   function readDateOfBirth() {
     window.plugins.healthkit.readDateOfBirth(
@@ -120,6 +134,7 @@
   function saveWorkout() {
     window.plugins.healthkit.saveWorkout({
           'activityType': 'HKWorkoutActivityTypeCycling', // HKWorkoutActivityType constant (https://developer.apple.com/library/ios/documentation/HealthKit/Reference/HKWorkout_Class/#//apple_ref/c/tdef/HKWorkoutActivityType)
+          'quantityType': 'HKQuantityTypeIdentifierDistanceCycling',
           'startDate': new Date(), // mandatory
           'endDate': null, // optional, use either this or duration
           'duration': 1800, // in seconds, optional, use either this or endDate
