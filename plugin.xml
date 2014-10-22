@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
-        id="nl.x-services.plugins.healthkit"
-        version="0.0.2">
+        id="com.telerik.plugins.healthkit"
+        version="0.1.0">
 
   <name>HealthKit</name>
 
   <description>
-    Interact with the new iOS8 HealthKit SDK
+    Interact with the iOS8 HealthKit SDK
   </description>
 
   <license>MIT</license>

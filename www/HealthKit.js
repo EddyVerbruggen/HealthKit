@@ -18,11 +18,31 @@ HealthKit.prototype.readGender = function (successCallback, errorCallback) {
 };
 
 HealthKit.prototype.saveWeight = function (options, successCallback, errorCallback) {
+  if (options.date === undefined) {
+    options.date = new Date();
+  }
+  if (typeof options.date == 'object') {
+    options.date = Math.round(options.date.getTime()/1000);
+  }
   cordova.exec(successCallback, errorCallback, "HealthKit", "saveWeight", [options]);
 };
 
 HealthKit.prototype.readWeight = function (options, successCallback, errorCallback) {
   cordova.exec(successCallback, errorCallback, "HealthKit", "readWeight", [options]);
+};
+
+HealthKit.prototype.saveHeight = function (options, successCallback, errorCallback) {
+  if (options.date === undefined) {
+    options.date = new Date();
+  }
+  if (typeof options.date == 'object') {
+    options.date = Math.round(options.date.getTime()/1000);
+  }
+  cordova.exec(successCallback, errorCallback, "HealthKit", "saveHeight", [options]);
+};
+
+HealthKit.prototype.readHeight = function (options, successCallback, errorCallback) {
+  cordova.exec(successCallback, errorCallback, "HealthKit", "readHeight", [options]);
 };
 
 HealthKit.prototype.findWorkouts = function (options, successCallback, errorCallback) {
@@ -34,14 +54,18 @@ HealthKit.prototype.saveWorkout = function (options, successCallback, errorCallb
     errorCallback("startDate must be a JavaScript Date Object");
     return;
   }
+  options.startDate = Math.round(options.startDate.getTime()/1000);
+
   if (!(options.endDate instanceof Date || options.duration > 0)) {
     errorCallback("endDate must be JavaScript Date Object, or the duration must be set");
     return;
   }
+  if (options.endDate instanceof Date) {
+    options.endDate = Math.round(options.endDate.getTime()/1000);
+  }
+
   var opts = options || {};
-  opts.startTime = options.startDate.getTime();
-  opts.endTime = options.endDate == null ? null : options.endDate.getTime();
-  cordova.exec(successCallback, errorCallback, "HealthKit", "saveWorkout", [opts]);
+  cordova.exec(successCallback, errorCallback, "HealthKit", "saveWorkout", [options]);
 };
 
 HealthKit.install = function () {

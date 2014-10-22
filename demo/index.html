@@ -43,6 +43,10 @@
     &nbsp;&nbsp;
     <button onclick="readGender()">Read gender</button>
     <br/><br/>
+    <button onclick="saveHeight()">Save Height</button>
+    &nbsp;&nbsp;
+    <button onclick="readHeight()">Read Height</button>
+    <br/><br/>
     <button onclick="saveWeight()">Save Weight</button>
     &nbsp;&nbsp;
     <button onclick="readWeight()">Read Weight</button>
@@ -65,8 +69,9 @@
   app.initialize();
 
   var callback = function (msg) {
+    // wrapping in a timeout because of a possbile native UI element blocking the webview
     setTimeout(function () {
-      alert(msg)
+      alert(JSON.stringify(msg))
     }, 0);
   };
 
@@ -106,7 +111,8 @@
   function saveWeight() {
     window.plugins.healthkit.saveWeight({
           'unit': 'kg',
-          'amount': 78.5
+          'amount': 78.5,
+          'date': new Date() // is 'now', which is the default as well
         },
         callback,
         callback
@@ -116,6 +122,25 @@
   function readWeight() {
     window.plugins.healthkit.readWeight({
           'unit': 'kg'
+        },
+        callback,
+        callback
+    );
+  }
+
+  function saveHeight() {
+    window.plugins.healthkit.saveHeight({
+          'unit': 'cm', // m|cm|mm|in|ft
+          'amount': 187
+        },
+        callback,
+        callback
+    );
+  }
+
+  function readHeight() {
+    window.plugins.healthkit.readHeight({
+          'unit': 'cm' // m|cm|mm|in|ft
         },
         callback,
         callback
@@ -137,11 +162,11 @@
           'quantityType': 'HKQuantityTypeIdentifierDistanceCycling',
           'startDate': new Date(), // mandatory
           'endDate': null, // optional, use either this or duration
-          'duration': 1800, // in seconds, optional, use either this or endDate
-          'energy': 2500, //
-          'energyUnit': 'cal', //
-          'distance': 2000, // in meters?, optional
-          'distanceUnit': 'm' // probably useful with the former param
+          'duration': 3600, // in seconds, optional, use either this or endDate
+          'energy': 300, //
+          'energyUnit': 'kcal', // J|cal|kcal
+          'distance': 11, // optional
+          'distanceUnit': 'km' // probably useful with the former param
           // 'extraData': "", // Not sure how necessary this is
         },
         callback,

@@ -25,7 +25,7 @@
   NSSet *readDataTypes = [[NSSet alloc] init];
   for (int i=0; i<[readTypes count]; i++) {
     NSString *elem = [readTypes objectAtIndex:i];
-    HKObjectType *type = [self getCategoryType:elem];
+    HKObjectType *type = [self getHKObjectType:elem];
     if (type == nil) {
       CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"readTypes contains an invalid value"];
       [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
@@ -40,7 +40,7 @@
   NSSet *writeDataTypes = [[NSSet alloc] init];
   for (int i=0; i<[writeTypes count]; i++) {
     NSString *elem = [writeTypes objectAtIndex:i];
-    HKObjectType *type = [self getCategoryType:elem];
+    HKObjectType *type = [self getHKObjectType:elem];
     if (type == nil) {
       CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"writeTypes contains an invalid value"];
       [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
@@ -110,18 +110,15 @@
   }
 
   int duration = 0;
-  NSNumber* startTime  = [args objectForKey:@"startTime"];
-  NSTimeInterval _startInterval = [startTime doubleValue] / 1000; // strip millis
-  NSDate *startDate = [NSDate dateWithTimeIntervalSince1970:_startInterval];
+  NSDate *startDate = [NSDate dateWithTimeIntervalSince1970:[[args objectForKey:@"startDate"] doubleValue]];
+
 
   NSDate *endDate;
   if ([args objectForKey:@"duration"]) {
     duration = [[args objectForKey:@"duration"] intValue];
-    endDate = [NSDate dateWithTimeIntervalSince1970:_startInterval + duration];
-  } else if ([args objectForKey:@"endTime"]) {
-    NSNumber* endTime = [args objectForKey:@"endTime"];
-    NSTimeInterval _endInterval = [endTime doubleValue] / 1000; // strip millis
-    endDate = [NSDate dateWithTimeIntervalSince1970:_endInterval];
+    endDate = [NSDate dateWithTimeIntervalSince1970:startDate.timeIntervalSince1970 + duration];
+  } else if ([args objectForKey:@"endDate"]) {
+    endDate = [NSDate dateWithTimeIntervalSince1970:[[args objectForKey:@"endDate"] doubleValue]];
   } else {
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"no duration or endDate was set"];
     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
@@ -149,7 +146,7 @@
           // now store the samples, so it shows up in the health app as well (pass this in as an option?)
           if (energy != nil) {
             HKQuantitySample *sampleActivity = [HKQuantitySample quantitySampleWithType:[HKQuantityType quantityTypeForIdentifier:
-                                                                                  quantityType] // TODO hardcoded
+                                                                                  quantityType]
                                                                      quantity:nrOfDistanceUnits
                                                                     startDate:startDate
                                                                       endDate:endDate];
@@ -186,24 +183,40 @@
 }
 
 - (void) findWorkouts:(CDVInvokedUrlCommand*)command {
-  NSPredicate *workout = [HKQuery predicateForWorkoutsWithWorkoutActivityType:HKWorkoutActivityTypeCycling];
-//  NSPredicate *explicitWorkout = [NSPredicate predicateWithFormat:@"%K == %d", HKPredicateKeyPathWorkoutType, HKWorkoutActivityTypeCycling];
-  HKSampleQuery *q = [HKSampleQuery alloc];
-  [q initWithSampleType:[HKWorkoutType workoutType] predicate:workout limit:2 sortDescriptors:nil resultsHandler:^(HKSampleQuery *query, NSArray *results, NSError *error) {
+  NSPredicate *workoutPredicate = nil;
+  // TODO if a specific workouttype was passed, use that
+  if (false) {
+    workoutPredicate = [HKQuery predicateForWorkoutsWithWorkoutActivityType:HKWorkoutActivityTypeCycling];
+  }
+  HKSampleQuery *query = [[HKSampleQuery alloc] initWithSampleType:[HKWorkoutType workoutType] predicate:workoutPredicate limit:HKObjectQueryNoLimit sortDescriptors:nil resultsHandler:^(HKSampleQuery *query, NSArray *results, NSError *error) {
     if (error) {
       dispatch_sync(dispatch_get_main_queue(), ^{
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR  messageAsString:error.localizedDescription];
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
         [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
       });
     } else {
-      int *nr = results.count;
-      NSString *debugdesc = query.debugDescription;
+      NSDateFormatter *df = [[NSDateFormatter alloc] init];
+      [df setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+
+      NSMutableArray *finalResults = [[NSMutableArray alloc] initWithCapacity:results.count];
+
+      for (HKWorkout *workout in results) {
+        NSMutableDictionary *entry = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
+                                      [NSNumber numberWithDouble:workout.duration], @"duration",
+                                      [df stringFromDate:workout.startDate], @"startDate",
+                                      [df stringFromDate:workout.endDate], @"endDate",
+                                      nil];
+
+        [finalResults addObject:entry];
+      }
+      
       dispatch_sync(dispatch_get_main_queue(), ^{
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:finalResults];
         [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
       });
     }
   }];
+  [self.healthStore executeQuery:query];
 }
 
 /*
@@ -239,7 +252,9 @@
   NSMutableDictionary *args = [command.arguments objectAtIndex:0];
   NSString *unit = [args objectForKey:@"unit"];
   NSNumber *amount = [args objectForKey:@"amount"];
-  
+  NSDate *date = [NSDate dateWithTimeIntervalSince1970:[[args objectForKey:@"date"] doubleValue]];
+
+
   if (amount == nil) {
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"no amount was set"];
     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
@@ -258,8 +273,7 @@
   [self.healthStore requestAuthorizationToShareTypes:requestTypes readTypes:requestTypes completion:^(BOOL success, NSError *error) {
     if (success) {
       HKQuantity *weightQuantity = [HKQuantity quantityWithUnit:preferredUnit doubleValue:[amount doubleValue]];
-      NSDate *now = [NSDate date]; // TODO pass in
-      HKQuantitySample *weightSample = [HKQuantitySample quantitySampleWithType:weightType quantity:weightQuantity startDate:now endDate:now];
+      HKQuantitySample *weightSample = [HKQuantitySample quantitySampleWithType:weightType quantity:weightQuantity startDate:date endDate:date];
       [self.healthStore saveObject:weightSample withCompletion:^(BOOL success, NSError* errorInner) {
         if (success) {
           dispatch_sync(dispatch_get_main_queue(), ^{
@@ -282,6 +296,7 @@
   }];
 }
 
+// TODO do we get back a date? Yes, see aapl_mostRecentQuantitySampleOfType
 - (void) readWeight:(CDVInvokedUrlCommand*)command {
   NSMutableDictionary *args = [command.arguments objectAtIndex:0];
   NSString *unit = [args objectForKey:@"unit"];
@@ -299,11 +314,115 @@
   // always ask for read and write permission if the app uses both, because granting read will remove write for the same type :(
   [self.healthStore requestAuthorizationToShareTypes:requestTypes readTypes:requestTypes completion:^(BOOL success, NSError *error) {
     if (success) {
-      [self.healthStore aapl_mostRecentQuantitySampleOfType:weightType predicate:nil completion:^(HKQuantity *mostRecentQuantity, NSError *errorInner) {
+      [self.healthStore aapl_mostRecentQuantitySampleOfType:weightType predicate:nil completion:^(HKQuantity *mostRecentQuantity, NSDate *mostRecentDate, NSError *errorInner) {
         if (mostRecentQuantity) {
           double usersWeight = [mostRecentQuantity doubleValueForUnit:preferredUnit];
+          NSDateFormatter *df = [[NSDateFormatter alloc] init];
+          [df setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+          NSMutableDictionary *entry = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
+                                        [NSNumber numberWithDouble:usersWeight], @"value",
+                                        unit, @"unit",
+                                        [df stringFromDate:mostRecentDate], @"date",
+                                        nil];
           dispatch_async(dispatch_get_main_queue(), ^{
-            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDouble:usersWeight];
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:entry];
+            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+          });
+        } else {
+          dispatch_async(dispatch_get_main_queue(), ^{
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorInner.localizedDescription];
+            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+          });
+        }
+      }];
+    } else {
+      dispatch_sync(dispatch_get_main_queue(), ^{
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+      });
+    }
+  }];
+}
+
+
+- (void) saveHeight:(CDVInvokedUrlCommand*)command {
+  NSMutableDictionary *args = [command.arguments objectAtIndex:0];
+  NSString *unit = [args objectForKey:@"unit"];
+  NSNumber *amount = [args objectForKey:@"amount"];
+  NSDate *date = [NSDate dateWithTimeIntervalSince1970:[[args objectForKey:@"date"] doubleValue]];
+  
+  
+  if (amount == nil) {
+    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"no amount was set"];
+    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+    return;
+  }
+  
+  HKUnit *preferredUnit = [self getUnit:unit:@"HKLengthUnit"];
+  if (preferredUnit == nil) {
+    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"invalid unit was passed"];
+    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+    return;
+  }
+  
+  HKQuantityType *heightType = [HKQuantityType quantityTypeForIdentifier:HKQuantityTypeIdentifierHeight];
+  NSSet *requestTypes = [NSSet setWithObjects: heightType, nil];
+  [self.healthStore requestAuthorizationToShareTypes:requestTypes readTypes:requestTypes completion:^(BOOL success, NSError *error) {
+    if (success) {
+      HKQuantity *heightQuantity = [HKQuantity quantityWithUnit:preferredUnit doubleValue:[amount doubleValue]];
+      HKQuantitySample *heightSample = [HKQuantitySample quantitySampleWithType:heightType quantity:heightQuantity startDate:date endDate:date];
+      [self.healthStore saveObject:heightSample withCompletion:^(BOOL success, NSError* errorInner) {
+        if (success) {
+          dispatch_sync(dispatch_get_main_queue(), ^{
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+          });
+        } else {
+          dispatch_sync(dispatch_get_main_queue(), ^{
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorInner.localizedDescription];
+            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+          });
+        }
+      }];
+    } else {
+      dispatch_sync(dispatch_get_main_queue(), ^{
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+      });
+    }
+  }];
+}
+
+
+- (void) readHeight:(CDVInvokedUrlCommand*)command {
+  NSMutableDictionary *args = [command.arguments objectAtIndex:0];
+  NSString *unit = [args objectForKey:@"unit"];
+  
+  HKUnit *preferredUnit = [self getUnit:unit:@"HKLengthUnit"];
+  if (preferredUnit == nil) {
+    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"invalid unit was passed"];
+    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+    return;
+  }
+  
+  // Query to get the user's latest height, if it exists.
+  HKQuantityType *heightType = [HKQuantityType quantityTypeForIdentifier:HKQuantityTypeIdentifierHeight];
+  NSSet *requestTypes = [NSSet setWithObjects: heightType, nil];
+  // always ask for read and write permission if the app uses both, because granting read will remove write for the same type :(
+  [self.healthStore requestAuthorizationToShareTypes:requestTypes readTypes:requestTypes completion:^(BOOL success, NSError *error) {
+    if (success) {
+      [self.healthStore aapl_mostRecentQuantitySampleOfType:heightType predicate:nil completion:^(HKQuantity *mostRecentQuantity, NSDate *mostRecentDate, NSError *errorInner) { // TODO use
+        if (mostRecentQuantity) {
+          double usersHeight = [mostRecentQuantity doubleValueForUnit:preferredUnit];
+          NSDateFormatter *df = [[NSDateFormatter alloc] init];
+          [df setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+          NSMutableDictionary *entry = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
+                                        [NSNumber numberWithDouble:usersHeight], @"value",
+                                        unit, @"unit",
+                                        [df stringFromDate:mostRecentDate], @"date",
+                                        nil];
+          dispatch_async(dispatch_get_main_queue(), ^{
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:entry];
             [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
           });
         } else {
@@ -379,7 +498,7 @@
   }
 }
 
-- (HKCategoryType*) getCategoryType:(NSString*) elem {
+- (HKObjectType*) getHKObjectType:(NSString*) elem {
   HKObjectType *type = [HKObjectType quantityTypeForIdentifier:elem];
   if (type == nil) {
     type = [HKObjectType characteristicTypeForIdentifier:elem];
@@ -406,9 +525,7 @@
 - (NSSet *)dataTypesToWrite {
   HKQuantityType *dietaryCalorieEnergyType = [HKObjectType quantityTypeForIdentifier:HKQuantityTypeIdentifierDietaryEnergyConsumed];
   HKQuantityType *activeEnergyBurnType = [HKObjectType quantityTypeForIdentifier:HKQuantityTypeIdentifierActiveEnergyBurned];
-  HKQuantityType *heightType = [HKObjectType quantityTypeForIdentifier:HKQuantityTypeIdentifierHeight];
-  HKQuantityType *weightType = [HKObjectType quantityTypeForIdentifier:HKQuantityTypeIdentifierBodyMass];
-  
+ 
   return [NSSet setWithObjects:dietaryCalorieEnergyType, activeEnergyBurnType, heightType, weightType, nil];
 }
 
@@ -416,11 +533,7 @@
 - (NSSet *)dataTypesToRead {
   HKQuantityType *dietaryCalorieEnergyType = [HKObjectType quantityTypeForIdentifier:HKQuantityTypeIdentifierDietaryEnergyConsumed];
   HKQuantityType *activeEnergyBurnType = [HKObjectType quantityTypeForIdentifier:HKQuantityTypeIdentifierActiveEnergyBurned];
-  HKQuantityType *heightType = [HKObjectType quantityTypeForIdentifier:HKQuantityTypeIdentifierHeight];
-  HKQuantityType *weightType = [HKObjectType quantityTypeForIdentifier:HKQuantityTypeIdentifierBodyMass];
-  HKCharacteristicType *birthdayType = [HKObjectType characteristicTypeForIdentifier:HKCharacteristicTypeIdentifierDateOfBirth];
-  HKCharacteristicType *biologicalSexType = [HKObjectType characteristicTypeForIdentifier:HKCharacteristicTypeIdentifierBiologicalSex];
-  
+ 
   return [NSSet setWithObjects:dietaryCalorieEnergyType, activeEnergyBurnType, heightType, weightType, birthdayType, biologicalSexType, nil];
 }
 */
