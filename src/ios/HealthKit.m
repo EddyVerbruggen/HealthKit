@@ -28,6 +28,7 @@
     HKObjectType *type = [self getHKObjectType:elem];
     if (type == nil) {
       CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"readTypes contains an invalid value"];
+      [result setKeepCallbackAsBool:YES];
       [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
       // not returning deliberately to be future proof; other permissions are still asked
     } else {
@@ -43,6 +44,7 @@
     HKObjectType *type = [self getHKObjectType:elem];
     if (type == nil) {
       CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"writeTypes contains an invalid value"];
+      [result setKeepCallbackAsBool:YES];
       [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
       // not returning deliberately to be future proof; other permissions are still asked
     } else {
@@ -218,6 +220,9 @@
   }];
   [self.healthStore executeQuery:query];
 }
+
+
+
 
 /*
 - (void) addSamplesToWorkout:(CDVInvokedUrlCommand*)command {
@@ -482,6 +487,217 @@
   }];
 }
 
+
+- (void) monitorSampleType:(CDVInvokedUrlCommand*)command {
+    
+    NSMutableDictionary *args = [command.arguments objectAtIndex:0];
+    NSString *sampleTypeString = [args objectForKey:@"sampleType"];
+    HKSampleType *type = [self getHKSampleType:sampleTypeString];
+    
+    HKUpdateFrequency updateFrequency = HKUpdateFrequencyImmediate;
+    
+    if (type==nil) {
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"sampleType was invalid"];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+        return;
+    }
+
+    // TODO use this an an anchor for an achored query
+    //__block int *anchor = 0;
+    
+    NSLog(@"Setting up ObserverQuery");
+    
+    HKObserverQuery *query;
+    query = [[HKObserverQuery alloc] initWithSampleType:type
+                                              predicate:nil
+                                          updateHandler:^(HKObserverQuery *query,
+                                                          HKObserverQueryCompletionHandler handler,
+                                                          NSError *error)
+     {
+         if (error) {
+             
+             handler();
+             
+             dispatch_sync(dispatch_get_main_queue(), ^{
+                 CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
+                 [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+             });
+             
+             
+         } else {
+             
+             handler();
+             
+             // TODO using a anchored query to return the new and updated values.
+             // Until then use querySampleType({limit=1, ascending="T", endDate=new Date()}) to return the
+             // last result
+             
+             
+             dispatch_sync(dispatch_get_main_queue(), ^{
+                 CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:sampleTypeString];
+                 [result setKeepCallbackAsBool:YES];
+                 [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+             });
+         }
+     }];
+
+
+    
+    // Make sure we get the updated immediately
+    [self.healthStore enableBackgroundDeliveryForType:type frequency:updateFrequency withCompletion:^(BOOL success, NSError *error) {
+        if (success) {
+            NSLog(@"Background devliery enabled %@", sampleTypeString);
+        }
+        else {
+            NSLog(@"Background delivery not enabled for %@ because of %@", sampleTypeString, error);
+        }
+        
+        NSLog(@"Executing ObserverQuery");
+        [self.healthStore executeQuery:query];
+        // TODO provide some kind of callback to stop monitoring this value, store the query in some kind
+        // of WeakHashSet equilavent?
+
+    }];
+};
+
+
+
+- (void) sumQuantityType:(CDVInvokedUrlCommand*)command {
+
+
+    NSMutableDictionary *args = [command.arguments objectAtIndex:0];
+    
+    
+    NSDate *startDate = [NSDate dateWithTimeIntervalSince1970:[[args objectForKey:@"startDate"] longValue]];
+    NSDate *endDate = [NSDate dateWithTimeIntervalSince1970:[[args objectForKey:@"endDate"] longValue]];
+    NSString *sampleTypeString = [args objectForKey:@"sampleType"];
+    
+    
+    HKQuantityType *type = [HKObjectType quantityTypeForIdentifier:sampleTypeString];
+    
+
+    if (type==nil) {
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"sampleType was invalid"];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+        return;
+    }
+    
+    
+    
+    NSPredicate *predicate = [HKQuery predicateForSamplesWithStartDate:startDate endDate:endDate options:HKQueryOptionStrictStartDate];
+    HKStatisticsOptions sumOptions = HKStatisticsOptionCumulativeSum;
+    HKStatisticsQuery *query;
+    query = [[HKStatisticsQuery alloc] initWithQuantityType:type
+                                    quantitySamplePredicate:predicate
+                                                    options:sumOptions
+                                          completionHandler:^(HKStatisticsQuery *query,
+                                                              HKStatistics *result,
+                                                              NSError *error)
+             {
+                 HKQuantity *sum = [result sumQuantity];
+                 CDVPluginResult* response = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDouble:[sum doubleValueForUnit:[HKUnit countUnit]]];
+                 [self.commandDelegate sendPluginResult:response callbackId:command.callbackId];
+             }];
+    
+    [self.healthStore executeQuery:query];
+}
+
+- (void) querySampleType:(CDVInvokedUrlCommand*)command {
+    
+    NSMutableDictionary *args = [command.arguments objectAtIndex:0];
+    
+    
+    NSDate *startDate = [NSDate dateWithTimeIntervalSince1970:[[args objectForKey:@"startDate"] longValue]];
+    NSDate *endDate = [NSDate dateWithTimeIntervalSince1970:[[args objectForKey:@"endDate"] longValue]];
+    NSString *sampleTypeString = [args objectForKey:@"sampleType"];
+    NSString *unitString = [args objectForKey:@"unit"];
+    int limit = [args objectForKey:@"limit"] != nil ? [[args objectForKey:@"limit"] intValue] : 100;
+    BOOL ascending = [args objectForKey:@"ascending"] != nil ? [[args objectForKey:@"ascending"] boolValue] : NO;
+    
+    
+    HKSampleType *type = [self getHKSampleType:sampleTypeString];
+    
+    
+    if (type==nil) {
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"sampleType was invalid"];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+        return;
+    }
+    
+    
+    HKUnit *unit = unitString!=nil ? [HKUnit unitFromString:unitString] : nil;
+    // TODO check that unit is compatible with sampleType if sample type of HKQuantityType
+    NSPredicate *predicate = [HKQuery predicateForSamplesWithStartDate:startDate endDate:endDate options:HKQueryOptionStrictStartDate];
+    
+    
+    NSString *endKey = HKSampleSortIdentifierEndDate;
+    NSSortDescriptor *endDateSort = [NSSortDescriptor sortDescriptorWithKey:endKey ascending:ascending];
+    HKSampleQuery *query = [[HKSampleQuery alloc] initWithSampleType:type
+                                                           predicate:predicate
+                                                               limit:limit
+                                                     sortDescriptors:@[endDateSort]
+                                                      resultsHandler:^(HKSampleQuery *query,
+                                                                       NSArray *results,
+                                                                       NSError *error)
+    {
+        if (error) {
+            dispatch_sync(dispatch_get_main_queue(), ^{
+                CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
+                [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+            });
+        } else {
+            
+            NSDateFormatter *df = [[NSDateFormatter alloc] init];
+            [df setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+
+            
+            NSMutableArray *finalResults = [[NSMutableArray alloc] initWithCapacity:results.count];
+            
+            for (HKSample *sample in results) {
+                
+                NSDate *startSample = sample.startDate;
+                NSDate *endSample = sample.endDate;
+                
+                NSMutableDictionary *entry = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
+                                              [df stringFromDate:startSample], @"startDate",
+                                              [df stringFromDate:endSample], @"endDate",
+                                              nil];
+                
+                if ([sample isKindOfClass:[HKCategorySample class]]) {
+                    HKCategorySample *csample = (HKCategorySample *)sample;
+                    [entry setValue:[NSNumber numberWithLong:csample.value] forKey:@"value"];
+                    [entry setValue:csample.categoryType.identifier forKey:@"catagoryType.identifier"];
+                    [entry setValue:csample.categoryType.description forKey:@"catagoryType.description"];
+                } else if ([sample isKindOfClass:[HKCorrelationType class]]) {
+                    // TODO
+                } else if ([sample isKindOfClass:[HKQuantitySample class]]) {
+                    HKQuantitySample *qsample = (HKQuantitySample *)sample;
+                    // TODO compare with unit
+                    [entry setValue:[NSNumber numberWithDouble:[qsample.quantity doubleValueForUnit:unit]] forKey:@"quantity"];
+                    
+                } else if ([sample isKindOfClass:[HKCorrelationType class]]) {
+                    // TODO
+                } else if ([sample isKindOfClass:[HKWorkout class]]) {
+                    HKWorkout *wsample = (HKWorkout*)sample;
+                    [entry setValue:[NSNumber numberWithDouble:wsample.duration] forKey:@"duration"];
+                }
+                
+                [finalResults addObject:entry];
+            }
+            
+            dispatch_sync(dispatch_get_main_queue(), ^{
+                CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:finalResults];
+                [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+            });
+        }
+    }];
+    
+    [self.healthStore executeQuery:query];
+}
+
+
+
+
 #pragma mark - helper methods
 - (HKUnit*) getUnit:(NSString*) type : (NSString*) expected {
   HKUnit *localUnit;
@@ -503,20 +719,29 @@
   if (type == nil) {
     type = [HKObjectType characteristicTypeForIdentifier:elem];
   }
-  if (type == nil) {
-    type = [HKObjectType categoryTypeForIdentifier:elem];
-  }
-  if (type == nil) {
-    type = [HKObjectType categoryTypeForIdentifier:elem];
-  }
-  if (type == nil) {
-    type = [HKObjectType correlationTypeForIdentifier:elem];
-  }
-  if (type == nil && [elem isEqualToString:@"workoutType"]) {
-    type = [HKObjectType workoutType];
+  if (type == nil){
+      type = [self getHKSampleType:elem];
   }
   return type;
 }
+
+- (HKSampleType*) getHKSampleType:(NSString*) elem {
+    HKSampleType *type = [HKObjectType quantityTypeForIdentifier:elem];
+    if (type == nil) {
+        type = [HKObjectType categoryTypeForIdentifier:elem];
+    }
+    if (type == nil) {
+        type = [HKObjectType quantityTypeForIdentifier:elem];
+    }
+    if (type == nil) {
+        type = [HKObjectType correlationTypeForIdentifier:elem];
+    }
+    if (type == nil && [elem isEqualToString:@"workoutType"]) {
+        type = [HKObjectType workoutType];
+    }
+    return type;
+}
+
 
 /*
 #pragma mark - HealthKit Permissions
