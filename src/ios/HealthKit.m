@@ -641,7 +641,8 @@
     HKUnit *unit = unitString!=nil ? [HKUnit unitFromString:unitString] : nil;
     // TODO check that unit is compatible with sampleType if sample type of HKQuantityType
     NSPredicate *predicate = [HKQuery predicateForSamplesWithStartDate:startDate endDate:endDate options:HKQueryOptionStrictStartDate];
-    
+  
+    // TODO ask permission if we don't have it
     
     NSString *endKey = HKSampleSortIdentifierEndDate;
     NSSortDescriptor *endDateSort = [NSSortDescriptor sortDescriptorWithKey:endKey ascending:ascending];

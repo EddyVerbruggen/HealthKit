@@ -43,6 +43,8 @@
     &nbsp;&nbsp;
     <button onclick="readGender()">Read gender</button>
     <br/><br/>
+    <button onclick="querySampleType()">Query Sample</button>
+    <br/><br/>
     <button onclick="saveHeight()">Save Height</button>
     &nbsp;&nbsp;
     <button onclick="readHeight()">Read Height</button>
@@ -74,6 +76,12 @@
       alert(JSON.stringify(msg))
     }, 0);
   };
+
+  var yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  var tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
 
   function available() {
     window.plugins.healthkit.available(
@@ -168,6 +176,18 @@
           'distance': 11, // optional
           'distanceUnit': 'km' // probably useful with the former param
           // 'extraData': "", // Not sure how necessary this is
+        },
+        callback,
+        callback
+    );
+  }
+
+  function querySampleType() {
+    window.plugins.healthkit.querySampleType({
+          'startDate': yesterday, // mandatory
+          'endDate': tomorrow, // mandatory
+          'sampleType': 'HKQuantityTypeIdentifierHeight',
+          'unit' : 'cm'
         },
         callback,
         callback

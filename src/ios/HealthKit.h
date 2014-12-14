@@ -20,4 +20,8 @@
 - (void) saveWorkout:(CDVInvokedUrlCommand*)command;
 - (void) findWorkouts:(CDVInvokedUrlCommand*)command;
 
+- (void) monitorSampleType:(CDVInvokedUrlCommand*)command;
+- (void) sumQuantityType:(CDVInvokedUrlCommand*)command;
+- (void) querySampleType:(CDVInvokedUrlCommand*)command;
+
 @end
