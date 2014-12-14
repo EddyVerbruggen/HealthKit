@@ -190,35 +190,48 @@
   if (false) {
     workoutPredicate = [HKQuery predicateForWorkoutsWithWorkoutActivityType:HKWorkoutActivityTypeCycling];
   }
-  HKSampleQuery *query = [[HKSampleQuery alloc] initWithSampleType:[HKWorkoutType workoutType] predicate:workoutPredicate limit:HKObjectQueryNoLimit sortDescriptors:nil resultsHandler:^(HKSampleQuery *query, NSArray *results, NSError *error) {
-    if (error) {
+  
+  NSSet *types = [NSSet setWithObjects:[HKWorkoutType workoutType], nil];
+  [self.healthStore requestAuthorizationToShareTypes:types readTypes:types completion:^(BOOL success, NSError *error) {
+    if (!success) {
       dispatch_sync(dispatch_get_main_queue(), ^{
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
         [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
       });
     } else {
-      NSDateFormatter *df = [[NSDateFormatter alloc] init];
-      [df setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-
-      NSMutableArray *finalResults = [[NSMutableArray alloc] initWithCapacity:results.count];
-
-      for (HKWorkout *workout in results) {
-        NSMutableDictionary *entry = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
-                                      [NSNumber numberWithDouble:workout.duration], @"duration",
-                                      [df stringFromDate:workout.startDate], @"startDate",
-                                      [df stringFromDate:workout.endDate], @"endDate",
-                                      nil];
-
-        [finalResults addObject:entry];
-      }
       
-      dispatch_sync(dispatch_get_main_queue(), ^{
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:finalResults];
-        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
-      });
+      
+      HKSampleQuery *query = [[HKSampleQuery alloc] initWithSampleType:[HKWorkoutType workoutType] predicate:workoutPredicate limit:HKObjectQueryNoLimit sortDescriptors:nil resultsHandler:^(HKSampleQuery *query, NSArray *results, NSError *error) {
+        if (error) {
+          dispatch_sync(dispatch_get_main_queue(), ^{
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
+            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+          });
+        } else {
+          NSDateFormatter *df = [[NSDateFormatter alloc] init];
+          [df setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+          
+          NSMutableArray *finalResults = [[NSMutableArray alloc] initWithCapacity:results.count];
+          
+          for (HKWorkout *workout in results) {
+            NSMutableDictionary *entry = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
+                                          [NSNumber numberWithDouble:workout.duration], @"duration",
+                                          [df stringFromDate:workout.startDate], @"startDate",
+                                          [df stringFromDate:workout.endDate], @"endDate",
+                                          nil];
+            
+            [finalResults addObject:entry];
+          }
+          
+          dispatch_sync(dispatch_get_main_queue(), ^{
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:finalResults];
+            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+          });
+        }
+      }];
+      [self.healthStore executeQuery:query];
     }
   }];
-  [self.healthStore executeQuery:query];
 }
 
 
