@@ -9,7 +9,15 @@
     Interact with the iOS8 HealthKit SDK
   </description>
 
+  <author>Eddy Verbruggen / Telerik</author>
+
   <license>MIT</license>
+
+  <keywords>Health, HealthKit, Fit, Fitness, Birthdate, Gender, Height, Weight, Workout</keywords>
+
+  <repo>https://github.com/Telerik-Verified-Plugins/HealthKit.git</repo>
+
+  <issue>https://github.com/Telerik-Verified-Plugins/HealthKit/issues</issue>
 
   <engines>
     <engine name="cordova" version=">=3.0.0"/>
