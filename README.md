@@ -3,6 +3,14 @@
 <img src="img/healthkit-hero_2x.png" width="128px" height="128px"/>
 
 
+<table width="100%">
+    <tr>
+        <td width="100"><a href="http://plugins.telerik.com/plugin/healthkit"><img src="http://www.x-services.nl/github-images/telerik-verified-plugins-marketplace.png" width="97px" height="71px" alt="Marketplace logo"/></a></td>
+        <td>For a quick demo app and easy code samples, check out the plugin page at the Verified Plugins Marketplace: http://plugins.telerik.com/plugin/healthkit</td>
+    </tr>
+</table>
+
+
 ### Supported functions:
 * `available`: check if HealthKit is supported (iOS8+, not on iPad)
 * `requestAuthorization`: ask some or all permissions up front, [see the example](demo/index.html)
