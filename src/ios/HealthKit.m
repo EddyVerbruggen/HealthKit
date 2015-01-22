@@ -583,8 +583,7 @@
     NSDate *startDate = [NSDate dateWithTimeIntervalSince1970:[[args objectForKey:@"startDate"] longValue]];
     NSDate *endDate = [NSDate dateWithTimeIntervalSince1970:[[args objectForKey:@"endDate"] longValue]];
     NSString *sampleTypeString = [args objectForKey:@"sampleType"];
-
-
+    NSString *unitString = [args objectForKey:@"unit"];
     HKQuantityType *type = [HKObjectType quantityTypeForIdentifier:sampleTypeString];
 
 
@@ -599,6 +598,7 @@
     NSPredicate *predicate = [HKQuery predicateForSamplesWithStartDate:startDate endDate:endDate options:HKQueryOptionStrictStartDate];
     HKStatisticsOptions sumOptions = HKStatisticsOptionCumulativeSum;
     HKStatisticsQuery *query;
+    HKUnit *unit = unitString!=nil ? [HKUnit unitFromString:unitString] : [HKUnit countUnit];
     query = [[HKStatisticsQuery alloc] initWithQuantityType:type
                                     quantitySamplePredicate:predicate
                                                     options:sumOptions
@@ -607,7 +607,7 @@
                                                               NSError *error)
              {
                  HKQuantity *sum = [result sumQuantity];
-                 CDVPluginResult* response = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDouble:[sum doubleValueForUnit:[HKUnit countUnit]]];
+                 CDVPluginResult* response = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDouble:[sum doubleValueForUnit:unit]];
                  [self.commandDelegate sendPluginResult:response callbackId:command.callbackId];
              }];
 
