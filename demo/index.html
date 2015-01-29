@@ -93,6 +93,7 @@
   function requestAuthorization() {
     window.plugins.healthkit.requestAuthorization(
         {
+          // both of these params are optional
           'readTypes'  : ['HKCharacteristicTypeIdentifierDateOfBirth', 'HKQuantityTypeIdentifierActiveEnergyBurned', 'HKQuantityTypeIdentifierHeight'],
           'writeTypes' : ['HKQuantityTypeIdentifierActiveEnergyBurned', 'HKQuantityTypeIdentifierHeight', 'HKQuantityTypeIdentifierDistanceCycling']
         },
@@ -118,6 +119,7 @@
 
   function saveWeight() {
     window.plugins.healthkit.saveWeight({
+          'requestReadPermission': false, // use if your app doesn't need to read
           'unit': 'kg',
           'amount': 78.5,
           'date': new Date() // is 'now', which is the default as well
@@ -129,6 +131,7 @@
 
   function readWeight() {
     window.plugins.healthkit.readWeight({
+          'requestWritePermission': false, // use if your app doesn't need to write
           'unit': 'kg'
         },
         callback,

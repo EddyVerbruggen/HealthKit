@@ -22,7 +22,7 @@
 * `saveHeight`: pass in unit (mm=millimeter, cm=centimeter, m=meter, in=inch, ft=foot) and amount
 * `saveWorkout`: [see the example](demo/index.html) for instructions
 * `findWorkouts`: no params yet, so this will return all workouts ever of any type
-* `querySampleType`: [see the example](demo/index.html). Note that you need to call `requestAuthorization` first in this version of the plugin.
+* `querySampleType`: [see the example](demo/index.html).
 * `sumQuantityType`: not documented yet
 * `monitorSampleType`:  not documented yet
 
