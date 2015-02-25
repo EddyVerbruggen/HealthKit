@@ -192,7 +192,7 @@
   }
   
   NSSet *types = [NSSet setWithObjects:[HKWorkoutType workoutType], nil];
-  [self.healthStore requestAuthorizationToShareTypes:types readTypes:types completion:^(BOOL success, NSError *error) {
+  [self.healthStore requestAuthorizationToShareTypes:nil readTypes:types completion:^(BOOL success, NSError *error) {
     if (!success) {
       dispatch_sync(dispatch_get_main_queue(), ^{
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
