@@ -77,11 +77,12 @@
   
   NSString *activityType = [args objectForKey:@"activityType"];
   NSString *quantityType = [args objectForKey:@"quantityType"]; // TODO verify this value
-  
+
   // TODO check validity of this enum
   //  HKWorkoutActivityType activityTypeEnum = HKWorkoutActivityTypeCycling;
   HKWorkoutActivityType activityTypeEnum = (HKWorkoutActivityType) activityType;
-  
+
+  BOOL requestReadPermission = [args objectForKey:@"requestReadPermission"] == nil ? YES : [[args objectForKey:@"requestReadPermission"] boolValue];
   
   // optional energy
   NSNumber *energy = [args objectForKey:@"energy"];
@@ -127,9 +128,8 @@
     return;
   }
   
-  
   NSSet *types = [NSSet setWithObjects:[HKWorkoutType workoutType], [HKQuantityType quantityTypeForIdentifier:HKQuantityTypeIdentifierActiveEnergyBurned], [HKQuantityType quantityTypeForIdentifier:quantityType], nil];
-  [self.healthStore requestAuthorizationToShareTypes:types readTypes:nil completion:^(BOOL success, NSError *error) {
+  [self.healthStore requestAuthorizationToShareTypes:types readTypes:requestReadPermission ? types : nil completion:^(BOOL success, NSError *error) {
     if (!success) {
       dispatch_sync(dispatch_get_main_queue(), ^{
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
@@ -272,7 +272,7 @@
   NSNumber *amount = [args objectForKey:@"amount"];
   NSDate *date = [NSDate dateWithTimeIntervalSince1970:[[args objectForKey:@"date"] doubleValue]];
   BOOL requestReadPermission = [args objectForKey:@"requestReadPermission"] == nil ? YES : [[args objectForKey:@"requestReadPermission"] boolValue];
-
+  
   if (amount == nil) {
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"no amount was set"];
     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
@@ -319,7 +319,7 @@
   NSMutableDictionary *args = [command.arguments objectAtIndex:0];
   NSString *unit = [args objectForKey:@"unit"];
   BOOL requestWritePermission = [args objectForKey:@"requestWritePermission"] == nil ? YES : [[args objectForKey:@"requestWritePermission"] boolValue];
-
+  
   HKUnit *preferredUnit = [self getUnit:unit:@"HKMassUnit"];
   if (preferredUnit == nil) {
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"invalid unit was passed"];
@@ -417,7 +417,7 @@
   NSMutableDictionary *args = [command.arguments objectAtIndex:0];
   NSString *unit = [args objectForKey:@"unit"];
   BOOL requestWritePermission = [args objectForKey:@"requestWritePermission"] == nil ? YES : [[args objectForKey:@"requestWritePermission"] boolValue];
-
+  
   HKUnit *preferredUnit = [self getUnit:unit:@"HKLengthUnit"];
   if (preferredUnit == nil) {
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"invalid unit was passed"];
