@@ -1,5 +1,6 @@
 #import "HealthKit.h"
 #import "HKHealthStore+AAPLExtensions.h"
+#import "WorkoutActivityConversion.h"
 #import <Cordova/CDV.h>
 
 @implementation HealthKit
@@ -77,11 +78,9 @@
   
   NSString *activityType = [args objectForKey:@"activityType"];
   NSString *quantityType = [args objectForKey:@"quantityType"]; // TODO verify this value
-
-  // TODO check validity of this enum
-  //  HKWorkoutActivityType activityTypeEnum = HKWorkoutActivityTypeCycling;
-  HKWorkoutActivityType activityTypeEnum = (HKWorkoutActivityType) activityType;
-
+  
+  HKWorkoutActivityType activityTypeEnum = [WorkoutActivityConversion convertStringToHKWorkoutActivityType:activityType];
+  
   BOOL requestReadPermission = [args objectForKey:@"requestReadPermission"] == nil ? YES : [[args objectForKey:@"requestReadPermission"] boolValue];
   
   // optional energy
@@ -214,11 +213,17 @@
           NSMutableArray *finalResults = [[NSMutableArray alloc] initWithCapacity:results.count];
           
           for (HKWorkout *workout in results) {
+            NSString *workoutActivity = [WorkoutActivityConversion convertHKWorkoutActivityTypeToString:workout.workoutActivityType];
+//            HKQuantity *teb = workout.totalEnergyBurned.description;
+//            HKQuantity *td = [workout.totalDistance.description;
             NSMutableDictionary *entry = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
-                                          [NSNumber numberWithDouble:workout.duration], @"duration",
-                                          [df stringFromDate:workout.startDate], @"startDate",
-                                          [df stringFromDate:workout.endDate], @"endDate",
-                                          nil];
+                                            [NSNumber numberWithDouble:workout.duration], @"duration",
+                                            [df stringFromDate:workout.startDate], @"startDate",
+                                            [df stringFromDate:workout.endDate], @"endDate",
+                                            workout.source.bundleIdentifier, @"sourceBundleId",
+                                            workoutActivity, @"activityType",
+                                            nil
+                                          ];
             
             [finalResults addObject:entry];
           }

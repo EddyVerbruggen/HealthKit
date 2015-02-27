@@ -36,6 +36,14 @@
       </feature>
     </config-file>
 
+    <config-file target="*-Info.plist" parent="UIRequiredDeviceCapabilities">
+      <array>
+        <string>healthkit</string>
+      </array>
+    </config-file>
+
+    <header-file src="src/ios/WorkoutActivityConversion.h"/>
+    <source-file src="src/ios/WorkoutActivityConversion.m"/>
     <header-file src="src/ios/HKHealthStore+AAPLExtensions.h"/>
     <source-file src="src/ios/HKHealthStore+AAPLExtensions.m"/>
     <header-file src="src/ios/HealthKit.h"/>
