@@ -57,6 +57,10 @@
     &nbsp;&nbsp;
     <button onclick="findWorkouts()">Find Workouts</button>
     <br/><br/>
+    <button onclick="monitorSampleType()">Monitor sample type</button>
+    <br/><br/>
+    <button onclick="sumQuantityType()">Sum quantity type</button>
+    <br/><br/>
   </div>
 </div>
 <script type="text/javascript" src="cordova.js"></script>
@@ -93,8 +97,8 @@
   function requestAuthorization() {
     window.plugins.healthkit.requestAuthorization(
         {
-          // both of these params are optional
-          'readTypes'  : ['HKCharacteristicTypeIdentifierDateOfBirth', 'HKQuantityTypeIdentifierActiveEnergyBurned', 'HKQuantityTypeIdentifierHeight'],
+          'readTypes'  : ['HKCharacteristicTypeIdentifierDateOfBirth',
+            'HKCategoryTypeIdentifierSleepAnalysis', 'HKQuantityTypeIdentifierActiveEnergyBurned', 'HKQuantityTypeIdentifierHeight'],
           'writeTypes' : ['HKQuantityTypeIdentifierActiveEnergyBurned', 'HKQuantityTypeIdentifierHeight', 'HKQuantityTypeIdentifierDistanceCycling']
         },
         callback,
@@ -130,7 +134,8 @@
   }
 
   function readWeight() {
-    window.plugins.healthkit.readWeight({
+    window.plugins.healthkit.readWeight(
+        {
           'requestWritePermission': false, // use if your app doesn't need to write
           'unit': 'kg'
         },
@@ -141,6 +146,7 @@
 
   function saveHeight() {
     window.plugins.healthkit.saveHeight({
+          'requestReadPermission': false,
           'unit': 'cm', // m|cm|mm|in|ft
           'amount': 187
         },
@@ -151,6 +157,7 @@
 
   function readHeight() {
     window.plugins.healthkit.readHeight({
+          'requestWritePermission': false,
           'unit': 'cm' // m|cm|mm|in|ft
         },
         callback,
@@ -169,6 +176,7 @@
 
   function saveWorkout() {
     window.plugins.healthkit.saveWorkout({
+          //'requestReadPermission' : false,
           'activityType': 'HKWorkoutActivityTypeCycling', // HKWorkoutActivityType constant (https://developer.apple.com/library/ios/documentation/HealthKit/Reference/HKWorkout_Class/#//apple_ref/c/tdef/HKWorkoutActivityType)
           'quantityType': 'HKQuantityTypeIdentifierDistanceCycling',
           'startDate': new Date(), // mandatory
@@ -186,13 +194,45 @@
   }
 
   function querySampleType() {
-    window.plugins.healthkit.querySampleType({
-          'startDate': yesterday, // mandatory
-          'endDate': tomorrow, // mandatory
-          'sampleType': 'HKQuantityTypeIdentifierHeight',
-          'unit' : 'cm'
+    window.plugins.healthkit.querySampleType(
+        {
+          'startDate': new Date(new Date().getTime() - 3*24*60*60*1000), // three days ago
+          'endDate': new Date(), // now
+          'sampleType': 'HKQuantityTypeIdentifierStepCount', // anything in HealthKit/HKTypeIdentifiers.h
+          'unit' : 'count' // make sure this is compatible with the sampleType
         },
         callback,
+        callback
+    );
+  }
+
+  // this is work in progress
+  function monitorSampleType() {
+    window.plugins.healthkit.monitorSampleType(
+        {
+          'sampleType': 'HKCategoryTypeIdentifierSleepAnalysis'
+        },
+        function(value) {
+          // note: setInterval would make more sense here
+          setTimeout(function() {
+            // lets see if sleep analysis was updated
+            alert("Sleep: " + value);
+          }, 2000)
+        },
+        callback
+    );
+  }
+
+  function sumQuantityType() {
+    window.plugins.healthkit.sumQuantityType(
+        {
+          'startDate': new Date(new Date().getTime() - 3*24*60*60*1000), // three days ago
+          'endDate': new Date(), // now
+          'sampleType': 'HKQuantityTypeIdentifierStepCount'
+        },
+        function(value) {
+          alert("Success for running step query "  + value);
+        },
         callback
     );
   }
