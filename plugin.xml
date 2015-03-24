@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
         id="com.telerik.plugins.healthkit"
-        version="0.3.1">
+        version="0.3.2">
 
   <name>HealthKit</name>
 
@@ -36,11 +36,12 @@
       </feature>
     </config-file>
 
-    <config-file target="*-Info.plist" parent="UIRequiredDeviceCapabilities">
+    <!-- commented this because it means you can't use the app on iPad -->
+    <!--config-file target="*-Info.plist" parent="UIRequiredDeviceCapabilities">
       <array>
         <string>healthkit</string>
       </array>
-    </config-file>
+    </config-file-->
 
     <header-file src="src/ios/WorkoutActivityConversion.h"/>
     <source-file src="src/ios/WorkoutActivityConversion.m"/>

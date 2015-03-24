@@ -27,5 +27,5 @@
 * `monitorSampleType`:  not documented yet
 
 ## Tips
-* Make sure your app id has the 'HealthKit' entitlement when this plugin is installed.
+* Make sure your app id has the 'HealthKit' entitlement when this plugin is installed (see iOS dev center).
 * Also, make sure your app and AppStore description complies with these Apple review guidelines: https://developer.apple.com/app-store/review/guidelines/#healthkit
