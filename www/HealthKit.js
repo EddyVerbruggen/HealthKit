@@ -1,4 +1,4 @@
-function HealthKit() {
+cordova.define("com.telerik.plugins.healthkit.HealthKit", function(require, exports, module) { function HealthKit() {
 }
 
 HealthKit.prototype.available = function (successCallback, errorCallback) {
@@ -114,6 +114,119 @@ HealthKit.prototype.querySampleType = function (options, successCallback, errorC
     cordova.exec(successCallback, errorCallback, "HealthKit", "querySampleType", [opts]);
 };
 
+HealthKit.prototype.queryCorrelationType = function (options, successCallback, errorCallback) {
+
+    if (!(options.correlationType)) {
+        errorCallback("Missing required paramter correlationType");
+    }
+
+    if (!options.startDate instanceof Date) {
+      errorCallback("startDate must be a JavaScript Date Object");
+      return;
+    }
+    options.startDate = Math.round(options.startDate.getTime()/1000);
+
+    if (!options.endDate instanceof Date) {
+      errorCallback("endDate must be a JavaScript Date Object");
+      return;
+    }
+                   
+    if (options.endDate instanceof Date) {
+      options.endDate = Math.round(options.endDate.getTime()/1000);
+    }
+
+    var opts = options || {};
+                   
+                   
+    cordova.exec(successCallback, errorCallback, "HealthKit", "queryCorrelationType", [opts]);
+};
+
+HealthKit.prototype.saveQuantitySample = function (options, successCallback, errorCallback) {
+
+    if (!(options.sampleType)) {
+        errorCallback("Missing required paramter sampleType");
+    }
+
+    if (!options.startDate instanceof Date) {
+      errorCallback("startDate must be a JavaScript Date Object");
+      return;
+    }
+    options.startDate = Math.round(options.startDate.getTime()/1000);
+
+    if (!options.endDate instanceof Date) {
+      errorCallback("endDate must be a JavaScript Date Object");
+      return;
+    }
+                   
+    if (options.endDate instanceof Date) {
+      options.endDate = Math.round(options.endDate.getTime()/1000);
+    }
+
+    var opts = options || {};
+                   
+    cordova.exec(successCallback, errorCallback, "HealthKit", "saveQuantitySample", [opts]);
+};
+
+HealthKit.prototype.saveCorrelation = function (options, successCallback, errorCallback) {
+
+    if (!(options.correlationType)) {
+        errorCallback("Missing required paramter correlationType");
+    }
+
+    if (!options.startDate instanceof Date) {
+      errorCallback("startDate must be a JavaScript Date Object");
+      return;
+    }
+    options.startDate = Math.round(options.startDate.getTime()/1000);
+
+    if (!options.endDate instanceof Date) {
+      errorCallback("endDate must be a JavaScript Date Object");
+      return;
+    }
+                   
+    if (options.endDate instanceof Date) {
+      options.endDate = Math.round(options.endDate.getTime()/1000);
+    }
+
+	if (!options.samples instanceof Array) {
+		errorCallback("samples must be a JavaScript Array Object");
+      	return;
+    }
+    /*console.log('before samples loop');
+    console.log(options.samples);
+    var finalSamples = [];
+    var sample;
+    for ( sample in options.samples ) {
+    	var tempSample = sample;
+    	console.log('checking tempSample ');
+    	console.log(tempSample);
+    	if (!tempSample.startDate instanceof Date) {
+		  errorCallback("sample.startDate must be a JavaScript Date Object");
+		  return;
+		}
+		console.log('checking sample ');
+    	tempSample.startDate = Math.round(tempSample.startDate.getTime()/1000);
+	
+		console.log('checking sample ');
+    	if (!tempSample.endDate instanceof Date) {
+		  errorCallback("sample.endDate must be a JavaScript Date Object");
+		  return;
+		}
+					   
+		console.log('checking sample ');
+    	if (tempSample.endDate instanceof Date) {
+		  tempSample.endDate = Math.round(tempSample.endDate.getTime()/1000);
+		}
+		console.log('moving onto next sample');
+		finalSamples.push(tempSample);
+    }
+    options.objects = finalSamples;
+    console.log('after objects loop');*/
+    var opts = options || {};
+                   
+    cordova.exec(successCallback, errorCallback, "HealthKit", "saveCorrelation", [opts]);
+};
+
 
 HealthKit.prototype.sumQuantityType = function (options, successCallback, errorCallback) {
     
@@ -153,3 +266,5 @@ HealthKit.install = function () {
 };
 
 cordova.addConstructor(HealthKit.install);
+
+});
