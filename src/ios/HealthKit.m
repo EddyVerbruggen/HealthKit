@@ -133,7 +133,7 @@
   NSNumber *distance = [args objectForKey:@"distance"];
   NSString *distanceUnit = [args objectForKey:@"distanceUnit"];
   HKQuantity *nrOfDistanceUnits = nil;
-  if (distance != nil) {
+  if (distance != (id)[NSNull null]) {
     HKUnit *preferredDistanceUnit = [self getUnit:distanceUnit:@"HKLengthUnit"];
     if (preferredDistanceUnit == nil) {
       CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"invalid distanceUnit was passed"];
