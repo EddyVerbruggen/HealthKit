@@ -13,6 +13,7 @@
 
 ### Supported functions:
 * `available`: check if HealthKit is supported (iOS8+, not on iPad)
+* `checkAuthStatus`: pass in a type and get back on of undetermined | denied | authorized, [see the example](demo/index.html)
 * `requestAuthorization`: ask some or all permissions up front, [see the example](demo/index.html)
 * `readDateOfBirth`: formatted as yyyy-MM-dd
 * `readGender`: output = male|female|unknown
