@@ -69,9 +69,41 @@
 }
 
 - (void) checkAuthStatus:(CDVInvokedUrlCommand*)command {
-  // TODO method to check this: HKAuthorizationStatus status = [self.healthStore authorizationStatusForType:<the type>];
-  // if status = denied, prompt user to go to settings
+  // Note for doc, if status = denied, prompt user to go to settings or the Health app
+  NSMutableDictionary *args = [command.arguments objectAtIndex:0];
+  NSString *checkType = [args objectForKey:@"type"];
+
+  HKObjectType *type = [self getHKObjectType:checkType];
+  if (type == nil) {
+    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"type is an invalid value"];
+    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+  } else {
+    HKAuthorizationStatus status = [self.healthStore authorizationStatusForType:type];
+    NSString *result;
+    if (status == HKAuthorizationStatusNotDetermined) {
+      result = @"undetermined";
+    } else if (status == HKAuthorizationStatusSharingDenied) {
+      result = @"denied";
+    } else if (status == HKAuthorizationStatusSharingAuthorized) {
+      result = @"authorized";
+    }
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:result];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+  }
 }
+
+// TODO make this a more generic function which can save anything
+/*
+- (void) saveNutrition:(CDVInvokedUrlCommand*)command {
+  HKQuantityType *quantityType = [HKQuantityType quantityTypeForIdentifier:HKQuantityTypeIdentifierDietaryEnergyConsumed];
+  HKQuantity *quantity = [HKQuantity quantityWithUnit:@"joules" doubleValue:300];
+  NSDate *now = [NSDate init];
+  NSDictionary *metaData = ["HKMetadataKeyFoodType":"Ham Sandwich"];
+  HKQuantitySample *calorieSample = HKQuantitySample(type: quantityType, quantity:quantity, startDate:now, endDate:now, metadata:metadata);
+  save sample (see workout)
+  .. etc
+}
+ */
 
 - (void) saveWorkout:(CDVInvokedUrlCommand*)command {
   NSMutableDictionary *args = [command.arguments objectAtIndex:0];

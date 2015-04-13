@@ -39,6 +39,8 @@
     &nbsp;&nbsp;
     <button onclick="requestAuthorization()">Request auth</button>
     <br/><br/>
+    <button onclick="checkAuthStatus()">Check auth status</button>
+    <br/><br/>
     <button onclick="readDateOfBirth()">Read birthdate</button>
     &nbsp;&nbsp;
     <button onclick="readGender()">Read gender</button>
@@ -97,15 +99,24 @@
   function requestAuthorization() {
     window.plugins.healthkit.requestAuthorization(
         {
-          'readTypes'  : ['HKCharacteristicTypeIdentifierDateOfBirth',
+          'readTypes': ['HKCharacteristicTypeIdentifierDateOfBirth',
             'HKCategoryTypeIdentifierSleepAnalysis', 'HKQuantityTypeIdentifierActiveEnergyBurned', 'HKQuantityTypeIdentifierHeight'],
-          'writeTypes' : ['HKQuantityTypeIdentifierActiveEnergyBurned', 'HKQuantityTypeIdentifierHeight', 'HKQuantityTypeIdentifierDistanceCycling']
+          'writeTypes': ['HKQuantityTypeIdentifierActiveEnergyBurned', 'HKQuantityTypeIdentifierHeight', 'HKQuantityTypeIdentifierDistanceCycling']
         },
         callback,
         callback
     );
   }
 
+  function checkAuthStatus() {
+    window.plugins.healthkit.checkAuthStatus(
+        {
+          'type': 'HKQuantityTypeIdentifierHeight'
+        },
+        callback,
+        callback
+    );
+  }
 
   function readDateOfBirth() {
     window.plugins.healthkit.readDateOfBirth(
@@ -166,9 +177,7 @@
   }
 
   function findWorkouts() {
-    window.plugins.healthkit.findWorkouts({
-
-        },
+    window.plugins.healthkit.findWorkouts({},
         callback,
         callback
     );
@@ -196,10 +205,10 @@
   function querySampleType() {
     window.plugins.healthkit.querySampleType(
         {
-          'startDate': new Date(new Date().getTime() - 3*24*60*60*1000), // three days ago
+          'startDate': new Date(new Date().getTime() - 3 * 24 * 60 * 60 * 1000), // three days ago
           'endDate': new Date(), // now
           'sampleType': 'HKQuantityTypeIdentifierStepCount', // anything in HealthKit/HKTypeIdentifiers.h
-          'unit' : 'count' // make sure this is compatible with the sampleType
+          'unit': 'count' // make sure this is compatible with the sampleType
         },
         callback,
         callback
@@ -212,9 +221,9 @@
         {
           'sampleType': 'HKCategoryTypeIdentifierSleepAnalysis'
         },
-        function(value) {
+        function (value) {
           // note: setInterval would make more sense here
-          setTimeout(function() {
+          setTimeout(function () {
             // lets see if sleep analysis was updated
             alert("Sleep: " + value);
           }, 2000)
@@ -226,12 +235,12 @@
   function sumQuantityType() {
     window.plugins.healthkit.sumQuantityType(
         {
-          'startDate': new Date(new Date().getTime() - 3*24*60*60*1000), // three days ago
+          'startDate': new Date(new Date().getTime() - 3 * 24 * 60 * 60 * 1000), // three days ago
           'endDate': new Date(), // now
           'sampleType': 'HKQuantityTypeIdentifierStepCount'
         },
-        function(value) {
-          alert("Success for running step query "  + value);
+        function (value) {
+          alert("Success for running step query " + value);
         },
         callback
     );

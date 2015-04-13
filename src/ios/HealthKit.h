@@ -6,6 +6,7 @@
 @property (nonatomic) HKHealthStore *healthStore;
 
 - (void) available:(CDVInvokedUrlCommand*)command;
+- (void) checkAuthStatus:(CDVInvokedUrlCommand*)command;
 - (void) requestAuthorization:(CDVInvokedUrlCommand*)command;
 
 - (void) readDateOfBirth:(CDVInvokedUrlCommand*)command;
