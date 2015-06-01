@@ -63,6 +63,12 @@
     <br/><br/>
     <button onclick="sumQuantityType()">Sum quantity type</button>
     <br/><br/>
+    <button onclick="saveQuantitySample()">Save quantity sample</button>
+    <br/><br/>
+    <button onclick="saveCorrelation()">Save correlation</button>
+    <br/><br/>
+    <button onclick="queryCorrelationType()">Query correlation</button>
+    <br/><br/>
   </div>
 </div>
 <script type="text/javascript" src="cordova.js"></script>
@@ -101,7 +107,7 @@
         {
           'readTypes': ['HKCharacteristicTypeIdentifierDateOfBirth',
             'HKCategoryTypeIdentifierSleepAnalysis', 'HKQuantityTypeIdentifierActiveEnergyBurned', 'HKQuantityTypeIdentifierHeight'],
-          'writeTypes': ['HKQuantityTypeIdentifierActiveEnergyBurned', 'HKQuantityTypeIdentifierHeight', 'HKQuantityTypeIdentifierDistanceCycling']
+          'writeTypes': ['HKQuantityTypeIdentifierDietaryEnergyConsumed','HKQuantityTypeIdentifierDietaryFatTotal','HKQuantityTypeIdentifierStepCount','HKQuantityTypeIdentifierActiveEnergyBurned', 'HKQuantityTypeIdentifierHeight', 'HKQuantityTypeIdentifierDistanceCycling']
         },
         callback,
         callback
@@ -246,6 +252,66 @@
     );
   }
 
+  function saveQuantitySample() {
+    window.plugins.healthkit.saveQuantitySample(
+        {
+          'startDate': new Date(new Date().getTime() - 24 * 60 * 60 * 1000), // a day ago
+          'endDate': new Date(), // now
+          'sampleType': 'HKQuantityTypeIdentifierStepCount', // make sure you request write access beforehand
+          'unit': 'count',
+          'amount': 300
+        },
+        function (value) {
+          alert("Success running saveQuantitySample, result: " + value);
+        },
+        callback
+    );
+  }
+
+  function saveCorrelation() {
+    window.plugins.healthkit.saveCorrelation(
+        {
+          'startDate': new Date(), // now
+          'endDate': new Date(), // now
+          'correlationType': 'HKCorrelationTypeIdentifierFood', // don't request write permission for this
+          'samples': [
+            {
+              'startDate': Math.round(new Date().getTime()/1000), // make sure to pass these as timestamps
+              'endDate': Math.round(new Date().getTime()/1000),
+              'sampleType': 'HKQuantityTypeIdentifierDietaryEnergyConsumed', // make sure you request write access beforehand
+              'unit': 'kcal',
+              'amount': 500
+            },
+            {
+              'startDate': Math.round(new Date().getTime()/1000),
+              'endDate': Math.round(new Date().getTime()/1000),
+              'sampleType': 'HKQuantityTypeIdentifierDietaryFatTotal', // make sure you request write access beforehand
+              'unit': 'g',
+              'amount': 25
+            }
+          ]
+        },
+        function (value) {
+          alert("Success running saveCorrelation, result: " + value);
+        },
+        callback
+    );
+  }
+
+  function queryCorrelationType() {
+    window.plugins.healthkit.queryCorrelationType(
+        {
+          'startDate': new Date(new Date().getTime() - 24 * 60 * 60 * 1000), // a day ago
+          'endDate': new Date(), // now
+          'correlationType': 'HKCorrelationTypeIdentifierFood', // don't request read permission for this
+          'unit': 'g'
+        },
+        function (value) {
+          alert("Success running queryCorrelationType, result: " + JSON.stringify(value));
+        },
+        callback
+    );
+  }
 </script>
 </body>
 </html>

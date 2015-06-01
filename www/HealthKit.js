@@ -77,7 +77,7 @@ HealthKit.prototype.monitorSampleType = function (options, successCallback, erro
     
     
     if (!(options.sampleType)) {
-        errorCallback("Missing required paramter sampleType");
+        errorCallback("Missing required parameter sampleType");
     }
     
     var opts = options || {};
@@ -90,7 +90,7 @@ HealthKit.prototype.monitorSampleType = function (options, successCallback, erro
 HealthKit.prototype.querySampleType = function (options, successCallback, errorCallback) {
 
     if (!(options.sampleType)) {
-        errorCallback("Missing required paramter sampleType");
+        errorCallback("Missing required parameter sampleType");
     }
 
     if (!options.startDate instanceof Date) {
@@ -117,7 +117,7 @@ HealthKit.prototype.querySampleType = function (options, successCallback, errorC
 HealthKit.prototype.queryCorrelationType = function (options, successCallback, errorCallback) {
 
     if (!(options.correlationType)) {
-        errorCallback("Missing required paramter correlationType");
+        errorCallback("Missing required parameter correlationType");
     }
 
     if (!options.startDate instanceof Date) {
@@ -144,7 +144,7 @@ HealthKit.prototype.queryCorrelationType = function (options, successCallback, e
 HealthKit.prototype.saveQuantitySample = function (options, successCallback, errorCallback) {
 
     if (!(options.sampleType)) {
-        errorCallback("Missing required paramter sampleType");
+        errorCallback("Missing required parameter sampleType");
     }
 
     if (!options.startDate instanceof Date) {
@@ -170,7 +170,7 @@ HealthKit.prototype.saveQuantitySample = function (options, successCallback, err
 HealthKit.prototype.saveCorrelation = function (options, successCallback, errorCallback) {
 
     if (!(options.correlationType)) {
-        errorCallback("Missing required paramter correlationType");
+        errorCallback("Missing required parameter correlationType");
     }
 
     if (!options.startDate instanceof Date) {
@@ -231,7 +231,7 @@ HealthKit.prototype.saveCorrelation = function (options, successCallback, errorC
 HealthKit.prototype.sumQuantityType = function (options, successCallback, errorCallback) {
     
     if (!(options.sampleType)) {
-        errorCallback("Missing required paramter sampleType");
+        errorCallback("Missing required parameter sampleType");
     }
     
     if (!options.startDate instanceof Date) {
