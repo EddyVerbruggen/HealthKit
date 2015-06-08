@@ -266,5 +266,3 @@ HealthKit.install = function () {
 };
 
 cordova.addConstructor(HealthKit.install);
-
-});
