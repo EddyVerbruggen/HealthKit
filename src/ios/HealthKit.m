@@ -702,10 +702,14 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                                       [entry setValue:csample.source.bundleIdentifier forKey:HKPluginKeySourceBundleId];
                                       [entry setValue:[df stringFromDate:csample.startDate] forKey:HKPluginKeyStartDate];
                                       [entry setValue:[df stringFromDate:csample.endDate] forKey:HKPluginKeyEndDate];
+                                      if (csample.metadata == nil || ![NSJSONSerialization isValidJSONObject:csample.metadata]) {
+                                        [entry setValue:@{} forKey:HKPluginKeyMetadata];
+                                      } else {
+                                        [entry setValue:csample.metadata forKey:HKPluginKeyMetadata];
+                                      }
                                     } else if ([sample isKindOfClass:[HKCorrelationType class]]) {
                                       HKCorrelation* correlation = (HKCorrelation*)sample;
                                       [entry setValue:correlation.correlationType.identifier forKey:HKPluginKeyCorrelationType];
-                                      // correlation.metadata may contain crap which can't be parsed to valid JSON data
                                       if (correlation.metadata == nil || ![NSJSONSerialization isValidJSONObject:correlation.metadata]) {
                                         [entry setValue:@{} forKey:HKPluginKeyMetadata];
                                       } else {
@@ -724,6 +728,11 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                                       [entry setValue:qsample.source.bundleIdentifier forKey:HKPluginKeySourceBundleId];
                                       [entry setValue:[df stringFromDate:qsample.startDate] forKey:HKPluginKeyStartDate];
                                       [entry setValue:[df stringFromDate:qsample.endDate] forKey:HKPluginKeyEndDate];
+                                      if (qsample.metadata == nil || ![NSJSONSerialization isValidJSONObject:qsample.metadata]) {
+                                        [entry setValue:@{} forKey:HKPluginKeyMetadata];
+                                      } else {
+                                        [entry setValue:qsample.metadata forKey:HKPluginKeyMetadata];
+                                      }
                                     } else if ([sample isKindOfClass:[HKWorkout class]]) {
                                       HKWorkout *wsample = (HKWorkout*)sample;
                                       [entry setValue:wsample.UUID.UUIDString forKey:HKPluginKeyUUID];
@@ -732,6 +741,11 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                                       [entry setValue:[df stringFromDate:wsample.startDate] forKey:HKPluginKeyStartDate];
                                       [entry setValue:[df stringFromDate:wsample.endDate] forKey:HKPluginKeyEndDate];
                                       [entry setValue:[NSNumber numberWithDouble:wsample.duration] forKey:@"duration"];
+                                      if (wsample.metadata == nil || ![NSJSONSerialization isValidJSONObject:wsample.metadata]) {
+                                        [entry setValue:@{} forKey:HKPluginKeyMetadata];
+                                      } else {
+                                        [entry setValue:wsample.metadata forKey:HKPluginKeyMetadata];
+                                      }
                                     }
                                     
                                     [finalResults addObject:entry];
