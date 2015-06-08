@@ -1,4 +1,4 @@
-cordova.define("com.telerik.plugins.healthkit.HealthKit", function(require, exports, module) { function HealthKit() {
+function HealthKit() {
 }
 
 HealthKit.prototype.available = function (successCallback, errorCallback) {
