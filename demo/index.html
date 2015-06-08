@@ -67,7 +67,9 @@
     <br/><br/>
     <button onclick="saveCorrelation()">Save correlation</button>
     <br/><br/>
-    <button onclick="queryCorrelationType()">Query correlation</button>
+    <button onclick="queryCorrelationTypeFood()">Query correlation food</button>
+    <br/><br/>
+    <button onclick="queryCorrelationTypeBloodPressure()">Query correlation blood pressure</button>
     <br/><br/>
   </div>
 </div>
@@ -273,6 +275,9 @@
         {
           'startDate': new Date(), // now
           'endDate': new Date(), // now
+          'metadata': {
+            'MyKey': 12345
+          },
           'correlationType': 'HKCorrelationTypeIdentifierFood', // don't request write permission for this
           'samples': [
             {
@@ -298,7 +303,7 @@
     );
   }
 
-  function queryCorrelationType() {
+  function queryCorrelationTypeFood() {
     window.plugins.healthkit.queryCorrelationType(
         {
           'startDate': new Date(new Date().getTime() - 24 * 60 * 60 * 1000), // a day ago
@@ -312,6 +317,22 @@
         callback
     );
   }
+
+  function queryCorrelationTypeBloodPressure() {
+    window.plugins.healthkit.queryCorrelationType(
+        {
+          'startDate': new Date(new Date().getTime() - 24 * 60 * 60 * 1000), // a day ago
+          'endDate': new Date(), // now
+          'correlationType': 'HKCorrelationTypeIdentifierBloodPressure', // don't request read permission for this
+          'unit': 'Pa'
+        },
+        function (value) {
+          alert("Success running queryCorrelationType, result: " + JSON.stringify(value));
+        },
+        callback
+    );
+  }
+
 </script>
 </body>
 </html>

@@ -772,7 +772,12 @@ static NSString *const HKPluginKeyUUID = @"UUID";
         } else if ([sample isKindOfClass:[HKCorrelation class]]) {
           HKCorrelation* correlation = (HKCorrelation*)sample;
           [entry setValue:correlation.correlationType.identifier forKey:HKPluginKeyCorrelationType];
-          [entry setValue:correlation.metadata != nil ? correlation.metadata : @{} forKey:HKPluginKeyMetadata];
+          // correlation.metadata may contain crap which can't be parsed to valid JSON data
+          if (correlation.metadata == nil || ![NSJSONSerialization isValidJSONObject:correlation.metadata]) {
+            [entry setValue:@{} forKey:HKPluginKeyMetadata];
+          } else {
+            [entry setValue:correlation.metadata forKey:HKPluginKeyMetadata];
+          }
           [entry setValue:correlation.UUID.UUIDString forKey:HKPluginKeyUUID];
           NSMutableArray* samples = [NSMutableArray array];
           for (HKQuantitySample* sample in correlation.objects) {
@@ -781,7 +786,7 @@ static NSString *const HKPluginKeyUUID = @"UUID";
               [samples addObject: @{HKPluginKeyStartDate:[df stringFromDate:sample.startDate],
                                     HKPluginKeyEndDate:[df stringFromDate:sample.endDate],
                                     HKPluginKeySampleType:sample.sampleType.identifier,
-                                    HKPluginKeyValue:[NSNumber numberWithDouble:[sample.quantity doubleValueForUnit:unit]],
+                                    HKPluginKeyValue:[NSNumber numberWithDouble:[sample.quantity doubleValueForUnit:unit]], //
                                     HKPluginKeyUnit:unit.unitString,
                                     HKPluginKeyMetadata:sample.metadata != nil ? sample.metadata : @{},
                                     HKPluginKeyUUID:sample.UUID.UUIDString}];
@@ -1016,7 +1021,7 @@ static NSString *const HKPluginKeyUUID = @"UUID";
 }
 
 - (HKCorrelation*) getHKCorrelationWithStartDate:(NSDate*) startDate endDate:(NSDate*) endDate correlationTypeString:(NSString*) correlationTypeString objects:(NSSet*) objects metadata:(NSDictionary*) metadata error:(NSError**) error {
-  NSLog(@"correlation type is %@",HKCorrelationTypeIdentifierBloodPressure);
+  NSLog(@"correlation type is %@", correlationTypeString);
   HKCorrelationType *correlationType = [HKCorrelationType correlationTypeForIdentifier:correlationTypeString];
   if (correlationType == nil) {
     *error = [NSError errorWithDomain:HKPluginError code:0 userInfo:@{NSLocalizedDescriptionKey:@"correlation type string was invalid"}];
