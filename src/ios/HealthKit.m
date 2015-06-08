@@ -17,6 +17,8 @@ static NSString *const HKPluginKeyAmount = @"amount";
 static NSString *const HKPluginKeyValue = @"value";
 static NSString *const HKPluginKeyCorrelationType = @"correlationType";
 static NSString *const HKPluginKeyObjects = @"samples";
+static NSString *const HKPluginKeySourceName = @"sourceName";
+static NSString *const HKPluginKeySourceBundleId = @"sourceBundleId";
 static NSString *const HKPluginKeyMetadata = @"metadata";
 static NSString *const HKPluginKeyUUID = @"UUID";
 
@@ -257,7 +259,7 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                                           [NSNumber numberWithDouble:workout.duration], @"duration",
                                           [df stringFromDate:workout.startDate], HKPluginKeyStartDate,
                                           [df stringFromDate:workout.endDate], HKPluginKeyEndDate,
-                                          workout.source.bundleIdentifier, @"sourceBundleId",
+                                          workout.source.bundleIdentifier, HKPluginKeySourceBundleId,
                                           workoutActivity, @"activityType",
                                           nil
                                           ];
@@ -695,17 +697,40 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                                       [entry setValue:[NSNumber numberWithLong:csample.value] forKey:HKPluginKeyValue];
                                       [entry setValue:csample.categoryType.identifier forKey:@"catagoryType.identifier"];
                                       [entry setValue:csample.categoryType.description forKey:@"catagoryType.description"];
+                                      [entry setValue:csample.UUID.UUIDString forKey:HKPluginKeyUUID];
+                                      [entry setValue:csample.source.name forKey:HKPluginKeySourceName];
+                                      [entry setValue:csample.source.bundleIdentifier forKey:HKPluginKeySourceBundleId];
+                                      [entry setValue:[df stringFromDate:csample.startDate] forKey:HKPluginKeyStartDate];
+                                      [entry setValue:[df stringFromDate:csample.endDate] forKey:HKPluginKeyEndDate];
                                     } else if ([sample isKindOfClass:[HKCorrelationType class]]) {
-                                      // TODO
+                                      HKCorrelation* correlation = (HKCorrelation*)sample;
+                                      [entry setValue:correlation.correlationType.identifier forKey:HKPluginKeyCorrelationType];
+                                      // correlation.metadata may contain crap which can't be parsed to valid JSON data
+                                      if (correlation.metadata == nil || ![NSJSONSerialization isValidJSONObject:correlation.metadata]) {
+                                        [entry setValue:@{} forKey:HKPluginKeyMetadata];
+                                      } else {
+                                        [entry setValue:correlation.metadata forKey:HKPluginKeyMetadata];
+                                      }
+                                      [entry setValue:correlation.UUID.UUIDString forKey:HKPluginKeyUUID];
+                                      [entry setValue:correlation.source.name forKey:HKPluginKeySourceName];
+                                      [entry setValue:correlation.source.bundleIdentifier forKey:HKPluginKeySourceBundleId];
+                                      [entry setValue:[df stringFromDate:correlation.startDate] forKey:HKPluginKeyStartDate];
+                                      [entry setValue:[df stringFromDate:correlation.endDate] forKey:HKPluginKeyEndDate];
                                     } else if ([sample isKindOfClass:[HKQuantitySample class]]) {
                                       HKQuantitySample *qsample = (HKQuantitySample *)sample;
-                                      // TODO compare with unit
                                       [entry setValue:[NSNumber numberWithDouble:[qsample.quantity doubleValueForUnit:unit]] forKey:@"quantity"];
-                                      
-                                    } else if ([sample isKindOfClass:[HKCorrelationType class]]) {
-                                      // TODO
+                                      [entry setValue:qsample.UUID.UUIDString forKey:HKPluginKeyUUID];
+                                      [entry setValue:qsample.source.name forKey:HKPluginKeySourceName];
+                                      [entry setValue:qsample.source.bundleIdentifier forKey:HKPluginKeySourceBundleId];
+                                      [entry setValue:[df stringFromDate:qsample.startDate] forKey:HKPluginKeyStartDate];
+                                      [entry setValue:[df stringFromDate:qsample.endDate] forKey:HKPluginKeyEndDate];
                                     } else if ([sample isKindOfClass:[HKWorkout class]]) {
                                       HKWorkout *wsample = (HKWorkout*)sample;
+                                      [entry setValue:wsample.UUID.UUIDString forKey:HKPluginKeyUUID];
+                                      [entry setValue:wsample.source.name forKey:HKPluginKeySourceName];
+                                      [entry setValue:wsample.source.bundleIdentifier forKey:HKPluginKeySourceBundleId];
+                                      [entry setValue:[df stringFromDate:wsample.startDate] forKey:HKPluginKeyStartDate];
+                                      [entry setValue:[df stringFromDate:wsample.endDate] forKey:HKPluginKeyEndDate];
                                       [entry setValue:[NSNumber numberWithDouble:wsample.duration] forKey:@"duration"];
                                     }
                                     
