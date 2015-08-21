@@ -527,6 +527,40 @@ static NSString *const HKPluginKeyUUID = @"UUID";
   }];
 }
 
+- (void) readBloodType:(CDVInvokedUrlCommand*)command {
+  HKCharacteristicType *bloodType = [HKObjectType characteristicTypeForIdentifier:HKCharacteristicTypeIdentifierBloodType];
+  [self.healthStore requestAuthorizationToShareTypes:nil readTypes:[NSSet setWithObjects: bloodType, nil] completion:^(BOOL success, NSError *error) {
+    if (success) {
+      HKBloodTypeObject *bloodType = [self.healthStore bloodTypeWithError:&error];
+      if (bloodType) {
+        NSString* bt = @"unknown";
+        if (bloodType.bloodType == HKBloodTypeAPositive) {
+          bt = @"A+";
+        } else if (bloodType.bloodType == HKBloodTypeANegative) {
+          bt = @"A-";
+        } else if (bloodType.bloodType == HKBloodTypeBPositive) {
+          bt = @"B+";
+        } else if (bloodType.bloodType == HKBloodTypeBNegative) {
+          bt = @"B-";
+        } else if (bloodType.bloodType == HKBloodTypeABPositive) {
+          bt = @"AB+";
+        } else if (bloodType.bloodType == HKBloodTypeABNegative) {
+          bt = @"AB-";
+        } else if (bloodType.bloodType == HKBloodTypeOPositive) {
+          bt = @"O+";
+        } else if (bloodType.bloodType == HKBloodTypeONegative) {
+          bt = @"O-";
+        }
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:bt];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+      } else {
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+      }
+    }
+  }];
+}
+
 - (void) readDateOfBirth:(CDVInvokedUrlCommand*)command {
   // TODO pass in dateformat?
   NSDateFormatter *df = [[NSDateFormatter alloc] init];

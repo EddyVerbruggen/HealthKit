@@ -5,7 +5,6 @@ HealthKit.prototype.available = function (successCallback, errorCallback) {
   cordova.exec(successCallback, errorCallback, "HealthKit", "available", []);
 };
 
-
 HealthKit.prototype.checkAuthStatus = function (options, successCallback, errorCallback) {
   cordova.exec(successCallback, errorCallback, "HealthKit", "checkAuthStatus", [options]);
 };
@@ -20,6 +19,10 @@ HealthKit.prototype.readDateOfBirth = function (successCallback, errorCallback) 
 
 HealthKit.prototype.readGender = function (successCallback, errorCallback) {
   cordova.exec(successCallback, errorCallback, "HealthKit", "readGender", []);
+};
+
+HealthKit.prototype.readBloodType = function (successCallback, errorCallback) {
+  cordova.exec(successCallback, errorCallback, "HealthKit", "readBloodType", []);
 };
 
 HealthKit.prototype.saveWeight = function (options, successCallback, errorCallback) {

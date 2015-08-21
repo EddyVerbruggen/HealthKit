@@ -9,8 +9,9 @@
 - (void) checkAuthStatus:(CDVInvokedUrlCommand*)command;
 - (void) requestAuthorization:(CDVInvokedUrlCommand*)command;
 
-- (void) readDateOfBirth:(CDVInvokedUrlCommand*)command;
 - (void) readGender:(CDVInvokedUrlCommand*)command;
+- (void) readBloodType:(CDVInvokedUrlCommand*)command;
+- (void) readDateOfBirth:(CDVInvokedUrlCommand*)command;
 
 - (void) saveWeight:(CDVInvokedUrlCommand*)command;
 - (void) readWeight:(CDVInvokedUrlCommand*)command;

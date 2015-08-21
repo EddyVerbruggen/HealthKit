@@ -45,6 +45,8 @@
     &nbsp;&nbsp;
     <button onclick="readGender()">Read gender</button>
     <br/><br/>
+    <button onclick="readBloodType()">Read bloodtype</button>
+    <br/><br/>
     <button onclick="querySampleType()">Query Sample</button>
     <br/><br/>
     <button onclick="saveHeight()">Save Height</button>
@@ -135,6 +137,13 @@
 
   function readGender() {
     window.plugins.healthkit.readGender(
+        callback,
+        callback
+    );
+  }
+
+  function readBloodType() {
+    window.plugins.healthkit.readBloodType(
         callback,
         callback
     );
