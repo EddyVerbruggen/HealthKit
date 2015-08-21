@@ -577,14 +577,16 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                });
              } else {
                handler();
+               NSLog(@"HealthKit plugin received a monitorSampleType, passing it to JS.");
                // TODO using a anchored query to return the new and updated values.
-               // Until then use querySampleType({limit=1, ascending="T", endDate=new Date()}) to return the
-               // last result
-               dispatch_sync(dispatch_get_main_queue(), ^{
+               // Until then use querySampleType({limit=1, ascending="T", endDate=new Date()}) to return the last result
+
+               // Issue #47: commented this block since it resulted in callbacks not being delivered while the app was in the background
+               //dispatch_sync(dispatch_get_main_queue(), ^{
                  CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:sampleTypeString];
                  [result setKeepCallbackAsBool:YES];
                  [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
-               });
+               //});
              }
            }];
   
