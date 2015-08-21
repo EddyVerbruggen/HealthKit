@@ -126,7 +126,7 @@ static NSString *const HKPluginKeyUUID = @"UUID";
   NSNumber *energy = [args objectForKey:@"energy"];
   NSString *energyUnit = [args objectForKey:@"energyUnit"];
   HKQuantity *nrOfEnergyUnits = nil;
-  if (energy != nil) {
+  if (energy != nil && energy != (id)[NSNull null]) { // better safe than sorry
     HKUnit *preferredEnergyUnit = [self getUnit:energyUnit:@"HKEnergyUnit"];
     if (preferredEnergyUnit == nil) {
       CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"invalid energyUnit was passed"];
@@ -140,7 +140,7 @@ static NSString *const HKPluginKeyUUID = @"UUID";
   NSNumber *distance = [args objectForKey:@"distance"];
   NSString *distanceUnit = [args objectForKey:@"distanceUnit"];
   HKQuantity *nrOfDistanceUnits = nil;
-  if (distance != (id)[NSNull null]) {
+  if (distance != nil && distance != (id)[NSNull null]) { // better safe than sorry
     HKUnit *preferredDistanceUnit = [self getUnit:distanceUnit:@"HKLengthUnit"];
     if (preferredDistanceUnit == nil) {
       CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"invalid distanceUnit was passed"];
