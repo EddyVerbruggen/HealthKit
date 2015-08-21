@@ -17,6 +17,7 @@
 * `requestAuthorization`: ask some or all permissions up front
 * `readDateOfBirth`: formatted as yyyy-MM-dd
 * `readGender`: output = male|female|unknown
+* `readBloodType`: output = A+|A-|B+|B-|AB+|AB-|O+|O-|unknown
 * `readWeight`: pass in unit (g=gram, kg=kilogram, oz=ounce, lb=pound, st=stone)
 * `saveWeight`: pass in unit (g=gram, kg=kilogram, oz=ounce, lb=pound, st=stone) and amount
 * `readHeight`: pass in unit (mm=millimeter, cm=centimeter, m=meter, in=inch, ft=foot)
