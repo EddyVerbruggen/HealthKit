@@ -1,269 +1,125 @@
 function HealthKit() {
 }
 
-HealthKit.prototype.available = function (successCallback, errorCallback) {
-  cordova.exec(successCallback, errorCallback, "HealthKit", "available", []);
+var matches = function(object, typeOrClass) {
+  return (typeof typeOrClass === 'string') ?
+    typeof object === typeOrClass : object instanceof typeOrClass;
 };
 
-HealthKit.prototype.checkAuthStatus = function (options, successCallback, errorCallback) {
-  cordova.exec(successCallback, errorCallback, "HealthKit", "checkAuthStatus", [options]);
+var rounds = function(object, prop) {
+  var val = object[prop];
+  if (!matches(val, Date)) return;
+  object[prop] = Math.round(val.getTime() / 1000);
 };
 
-HealthKit.prototype.requestAuthorization = function (options, successCallback, errorCallback) {
-  cordova.exec(successCallback, errorCallback, "HealthKit", "requestAuthorization", [options]);
-};
-
-HealthKit.prototype.readDateOfBirth = function (successCallback, errorCallback) {
-  cordova.exec(successCallback, errorCallback, "HealthKit", "readDateOfBirth", []);
-};
-
-HealthKit.prototype.readGender = function (successCallback, errorCallback) {
-  cordova.exec(successCallback, errorCallback, "HealthKit", "readGender", []);
-};
-
-HealthKit.prototype.readBloodType = function (successCallback, errorCallback) {
-  cordova.exec(successCallback, errorCallback, "HealthKit", "readBloodType", []);
-};
-
-HealthKit.prototype.saveWeight = function (options, successCallback, errorCallback) {
-  if (options.date === undefined) {
-    options.date = new Date();
+var hasValidDates = function(object) {
+  if (!matches(object.startDate, Date)) {
+    throw new TypeError("startDate must be a JavaScript Date Object");
   }
-  if (typeof options.date == 'object') {
-    options.date = Math.round(options.date.getTime()/1000);
+  if (!matches(object.endDate, Date)) {
+    throw new TypeError("endDate must be a JavaScript Date Object");
   }
-  cordova.exec(successCallback, errorCallback, "HealthKit", "saveWeight", [options]);
+  rounds(object, 'startDate');
+  rounds(object, 'endDate');
+  return object;
 };
 
-HealthKit.prototype.readWeight = function (options, successCallback, errorCallback) {
-  cordova.exec(successCallback, errorCallback, "HealthKit", "readWeight", [options]);
+var getChecker = function(options) {
+  return function paramChecker(type) {
+    var value = options[type];
+    if (type === 'startDate' || type === 'endDate') {
+      if (!matches(value, Date)) throw new TypeError(type + ' must be a JavaScript Date');
+    } else if (type === 'samples') {
+      if (!Array.isArray(value)) throw new TypeError(type + ' must be a JavaScript Array');
+    } else {
+      if (!value) throw new TypeError('Missing required paramter ' + type);
+    }
+  };
 };
 
-HealthKit.prototype.saveHeight = function (options, successCallback, errorCallback) {
-  if (options.date === undefined) {
-    options.date = new Date();
+// Supports:
+// define('type');
+// define('type', fn);
+// define('type', obj);
+// define('type', obj, fn)
+var define = function(methodName, params, fn) {
+  if (params == null) params = {};
+  if (typeof params === 'function') {
+    fn = params;
+    params = {};
   }
-  if (typeof options.date == 'object') {
-    options.date = Math.round(options.date.getTime()/1000);
+  if (!fn) fn = Function.prototype;
+
+  var isEmpty = !!(params && params.noArgs);
+  var checks = params.required || [];
+  if (!Array.isArray(checks)) checks = [checks];
+
+  if (isEmpty) {
+    HealthKit.prototype[methodName] = function(callback, onError) {
+      cordova.exec(callback, onError, 'HealthKit', methodName, []);
+    };
+  } else {
+    HealthKit.prototype[methodName] = function(options, callback, onError) {
+      if (!options) options = {};
+      try {
+        checks.forEach(getChecker(options));
+        fn(options);
+      } catch (error) {
+        onError(error.message);
+      }
+
+      var args = options ? [options] : []
+      cordova.exec(callback, onError, 'HealthKit', methodName, args);
+    };
+  };
+};
+
+define('available', {noArgs: true});
+define('checkAuthStatus');
+define('requestAuthorization');
+define('readDateOfBirth', {noArgs: true});
+define('readGender', {noArgs: true});
+define('findWorkouts');
+define('readWeight');
+define('readHeight');
+define('readBloodType', {noArgs: true});
+
+define('saveWeight', function(options) {
+  if (options.date == null) options.date = new Date();
+  if (typeof options.date === 'object') rounds(options, 'date');
+});
+
+define('saveHeight', function(options) {
+  if (options.date == null) options.date = new Date();
+  if (typeof options.date === 'object') rounds(options, 'date');
+});
+
+define('saveWorkout', {required: 'startDate'}, function(options) {
+  var hasEnd = matches(options.endDate, Date);
+  var hasDuration = options.duration && options.duration > 0;
+  rounds(options, 'startDate');
+
+  if (!hasEnd && !hasDuration) {
+    throw new TypeError("endDate must be JavaScript Date Object, or the duration must be set");
   }
-  cordova.exec(successCallback, errorCallback, "HealthKit", "saveHeight", [options]);
-};
+  if (hasEnd) rounds(options, 'endDate');
+});
 
-HealthKit.prototype.readHeight = function (options, successCallback, errorCallback) {
-  cordova.exec(successCallback, errorCallback, "HealthKit", "readHeight", [options]);
-};
+define('monitorSampleType', {required: 'sampleType'});
+define('querySampleType', {required: 'sampleType'}, hasValidDates);
 
-HealthKit.prototype.findWorkouts = function (options, successCallback, errorCallback) {
-  cordova.exec(successCallback, errorCallback, "HealthKit", "findWorkouts", [options]);
-};
+define('queryCorrelationType', {required: 'correlationType'}, hasValidDates);
+define('saveQuantitySample', {required: 'sampleType'}, hasValidDates);
 
-HealthKit.prototype.saveWorkout = function (options, successCallback, errorCallback) {
-  if (!options.startDate instanceof Date) {
-    errorCallback("startDate must be a JavaScript Date Object");
-    return;
-  }
-  options.startDate = Math.round(options.startDate.getTime()/1000);
+define('saveCorrelation', {required: ['correlationType', 'samples']}, function(options) {
+  hasValidDates(options);
+  options.objects = options.samples.map(hasValidDates);
+});
 
-  if (!(options.endDate instanceof Date || options.duration > 0)) {
-    errorCallback("endDate must be JavaScript Date Object, or the duration must be set");
-    return;
-  }
-  if (options.endDate instanceof Date) {
-    options.endDate = Math.round(options.endDate.getTime()/1000);
-  }
+define('sumQuantityType', {required: ['sampleType']}, hasValidDates);
 
-  var opts = options || {};
-  cordova.exec(successCallback, errorCallback, "HealthKit", "saveWorkout", [opts]);
-};
-               
-HealthKit.prototype.monitorSampleType = function (options, successCallback, errorCallback) {
-    
-    
-    if (!(options.sampleType)) {
-        errorCallback("Missing required parameter sampleType");
-    }
-    
-    var opts = options || {};
-    
-    
-    cordova.exec(successCallback, errorCallback, "HealthKit", "monitorSampleType", [opts]);
-};
-
-           
-HealthKit.prototype.querySampleType = function (options, successCallback, errorCallback) {
-
-    if (!(options.sampleType)) {
-        errorCallback("Missing required parameter sampleType");
-    }
-
-    if (!options.startDate instanceof Date) {
-      errorCallback("startDate must be a JavaScript Date Object");
-      return;
-    }
-    options.startDate = Math.round(options.startDate.getTime()/1000);
-
-    if (!options.endDate instanceof Date) {
-      errorCallback("endDate must be a JavaScript Date Object");
-      return;
-    }
-                   
-    if (options.endDate instanceof Date) {
-      options.endDate = Math.round(options.endDate.getTime()/1000);
-    }
-
-    var opts = options || {};
-                   
-                   
-    cordova.exec(successCallback, errorCallback, "HealthKit", "querySampleType", [opts]);
-};
-
-HealthKit.prototype.queryCorrelationType = function (options, successCallback, errorCallback) {
-
-    if (!(options.correlationType)) {
-        errorCallback("Missing required parameter correlationType");
-    }
-
-    if (!options.startDate instanceof Date) {
-      errorCallback("startDate must be a JavaScript Date Object");
-      return;
-    }
-    options.startDate = Math.round(options.startDate.getTime()/1000);
-
-    if (!options.endDate instanceof Date) {
-      errorCallback("endDate must be a JavaScript Date Object");
-      return;
-    }
-                   
-    if (options.endDate instanceof Date) {
-      options.endDate = Math.round(options.endDate.getTime()/1000);
-    }
-
-    var opts = options || {};
-                   
-                   
-    cordova.exec(successCallback, errorCallback, "HealthKit", "queryCorrelationType", [opts]);
-};
-
-HealthKit.prototype.saveQuantitySample = function (options, successCallback, errorCallback) {
-
-    if (!(options.sampleType)) {
-        errorCallback("Missing required parameter sampleType");
-    }
-
-    if (!options.startDate instanceof Date) {
-      errorCallback("startDate must be a JavaScript Date Object");
-      return;
-    }
-    options.startDate = Math.round(options.startDate.getTime()/1000);
-
-    if (!options.endDate instanceof Date) {
-      errorCallback("endDate must be a JavaScript Date Object");
-      return;
-    }
-                   
-    if (options.endDate instanceof Date) {
-      options.endDate = Math.round(options.endDate.getTime()/1000);
-    }
-
-    var opts = options || {};
-                   
-    cordova.exec(successCallback, errorCallback, "HealthKit", "saveQuantitySample", [opts]);
-};
-
-HealthKit.prototype.saveCorrelation = function (options, successCallback, errorCallback) {
-
-    if (!(options.correlationType)) {
-        errorCallback("Missing required parameter correlationType");
-    }
-
-    if (!options.startDate instanceof Date) {
-      errorCallback("startDate must be a JavaScript Date Object");
-      return;
-    }
-    options.startDate = Math.round(options.startDate.getTime()/1000);
-
-    if (!options.endDate instanceof Date) {
-      errorCallback("endDate must be a JavaScript Date Object");
-      return;
-    }
-                   
-    if (options.endDate instanceof Date) {
-      options.endDate = Math.round(options.endDate.getTime()/1000);
-    }
-
-	if (!options.samples instanceof Array) {
-		errorCallback("samples must be a JavaScript Array Object");
-      	return;
-    }
-    /*console.log('before samples loop');
-    console.log(options.samples);
-    var finalSamples = [];
-    var sample;
-    for ( sample in options.samples ) {
-    	var tempSample = sample;
-    	console.log('checking tempSample ');
-    	console.log(tempSample);
-    	if (!tempSample.startDate instanceof Date) {
-		  errorCallback("sample.startDate must be a JavaScript Date Object");
-		  return;
-		}
-		console.log('checking sample ');
-    	tempSample.startDate = Math.round(tempSample.startDate.getTime()/1000);
-	
-		console.log('checking sample ');
-    	if (!tempSample.endDate instanceof Date) {
-		  errorCallback("sample.endDate must be a JavaScript Date Object");
-		  return;
-		}
-					   
-		console.log('checking sample ');
-    	if (tempSample.endDate instanceof Date) {
-		  tempSample.endDate = Math.round(tempSample.endDate.getTime()/1000);
-		}
-		console.log('moving onto next sample');
-		finalSamples.push(tempSample);
-    }
-    options.objects = finalSamples;
-    console.log('after objects loop');*/
-    var opts = options || {};
-                   
-    cordova.exec(successCallback, errorCallback, "HealthKit", "saveCorrelation", [opts]);
-};
-
-
-HealthKit.prototype.sumQuantityType = function (options, successCallback, errorCallback) {
-    
-    if (!(options.sampleType)) {
-        errorCallback("Missing required parameter sampleType");
-    }
-    
-    if (!options.startDate instanceof Date) {
-        errorCallback("startDate must be a JavaScript Date Object");
-        return;
-    }
-    options.startDate = Math.round(options.startDate.getTime()/1000);
-    
-    if (!options.endDate instanceof Date) {
-        errorCallback("endDate must be a JavaScript Date Object");
-        return;
-    }
-    
-    if (options.endDate instanceof Date) {
-        options.endDate = Math.round(options.endDate.getTime()/1000);
-    }
-    
-    var opts = options || {};
-    
-    
-    cordova.exec(successCallback, errorCallback, "HealthKit", "sumQuantityType", [opts]);
-};
-
-
-HealthKit.install = function () {
-  if (!window.plugins) {
-    window.plugins = {};
-  }
-
+HealthKit.install = function() {
+  if (!window.plugins) window.plugins = {};
   window.plugins.healthkit = new HealthKit();
   return window.plugins.healthkit;
 };
