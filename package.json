@@ -1,0 +1,30 @@
+{
+  "version": "0.3.8",
+  "name": "com.telerik.plugins.healthkit",
+  "cordova_name": "HealthKit",
+  "description": "Interact with the iOS HealthKit SDK.",
+  "license": "MIT",
+  "author": "Telerik / Eddy Verbruggen <eddyverbruggen@gmail.com> (https://github.com/EddyVerbruggen)",
+  "repo": "https://github.com/Telerik-Verified-Plugins/HealthKit.git",
+  "issue": "https://github.com/Telerik-Verified-Plugins/HealthKit/issues",
+  "keywords": [
+    "Health",
+    "HealthKit",
+    "Fit",
+    "Fitness",
+    "Birthdate",
+    "Gender",
+    "Height",
+    "Weight",
+    "Workout"
+  ],
+  "platforms": [
+    "ios"
+  ],
+  "engines": [
+    {
+      "name": "cordova",
+      "version": ">=3.0.0"
+    }
+  ]
+}
