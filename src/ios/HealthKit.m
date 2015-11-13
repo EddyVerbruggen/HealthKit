@@ -86,7 +86,9 @@ static NSString *const HKPluginKeyUUID = @"UUID";
 }
 
 - (void)checkAuthStatus:(CDVInvokedUrlCommand*)command {
-    // Note for doc, if status = denied, prompt user to go to settings or the Health app
+    // If status = denied, prompt user to go to settings or the Health app
+    // Note that read access is not reflected. We're not allowed to know
+    // if a user grants/denies read access, *only* write access.
     NSMutableDictionary *args = [command.arguments objectAtIndex:0];
     NSString *checkType = [args objectForKey:HKPluginKeyType];
     
