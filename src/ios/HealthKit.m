@@ -253,13 +253,20 @@ static NSString *const HKPluginKeyUUID = @"UUID";
           
           for (HKWorkout *workout in results) {
             NSString *workoutActivity = [WorkoutActivityConversion convertHKWorkoutActivityTypeToString:workout.workoutActivityType];
-            //            HKQuantity *teb = workout.totalEnergyBurned.description;
-            //            HKQuantity *td = [workout.totalDistance.description;
+            
+            // iOS 9 moves the source property to a collection of revisions
+            HKSource *source = nil;
+            if([workout respondsToSelector:@selector(sourceRevision)]) {
+                source = workout.sourceRevision.source;
+            } else {
+                source = workout.source;
+            }
+            
             NSMutableDictionary *entry = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
                                           [NSNumber numberWithDouble:workout.duration], @"duration",
                                           [df stringFromDate:workout.startDate], HKPluginKeyStartDate,
                                           [df stringFromDate:workout.endDate], HKPluginKeyEndDate,
-                                          workout.source.bundleIdentifier, HKPluginKeySourceBundleId,
+                                          source.bundleIdentifier, HKPluginKeySourceBundleId,
                                           workoutActivity, @"activityType",
                                           nil
                                           ];
