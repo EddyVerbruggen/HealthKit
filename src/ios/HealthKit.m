@@ -85,28 +85,41 @@ static NSString *const HKPluginKeyUUID = @"UUID";
   }];
 }
 
-- (void) checkAuthStatus:(CDVInvokedUrlCommand*)command {
-  // Note for doc, if status = denied, prompt user to go to settings or the Health app
-  NSMutableDictionary *args = [command.arguments objectAtIndex:0];
-  NSString *checkType = [args objectForKey:HKPluginKeyType];
-  
-  HKObjectType *type = [self getHKObjectType:checkType];
-  if (type == nil) {
-    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"type is an invalid value"];
-    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
-  } else {
-    HKAuthorizationStatus status = [self.healthStore authorizationStatusForType:type];
-    NSString *result;
-    if (status == HKAuthorizationStatusNotDetermined) {
-      result = @"undetermined";
-    } else if (status == HKAuthorizationStatusSharingDenied) {
-      result = @"denied";
-    } else if (status == HKAuthorizationStatusSharingAuthorized) {
-      result = @"authorized";
+- (void)checkAuthStatus:(CDVInvokedUrlCommand*)command {
+    // Note for doc, if status = denied, prompt user to go to settings or the Health app
+    NSMutableDictionary *args = [command.arguments objectAtIndex:0];
+    NSString *checkType = [args objectForKey:HKPluginKeyType];
+    
+    HKObjectType *type = [self getHKObjectType:checkType];
+    
+    [self checkAuthStatusWithCallbackId:command.callbackId
+                                forType:type andCompletion:^(CDVPluginResult *result, NSString *callbackId) {
+                                    
+                                    [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+                                }];
+}
+
+// Private
+- (void)checkAuthStatusWithCallbackId:(NSString*)callbackId forType:(HKObjectType*)type
+                       andCompletion:(void(^)(CDVPluginResult* result, NSString *callbackId ))completion {
+    // According to the Apple docs, we are not allow to see if we have READ permission, only write/share
+    
+    if (type == nil) {
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"type is an invalid value"];
+        completion(result, callbackId);
+    } else {
+        HKAuthorizationStatus status = [self.healthStore authorizationStatusForType:type];
+        NSString *result;
+        if (status == HKAuthorizationStatusNotDetermined) {
+            result = @"undetermined";
+        } else if (status == HKAuthorizationStatusSharingDenied) {
+            result = @"denied";
+        } else if (status == HKAuthorizationStatusSharingAuthorized) {
+            result = @"authorized";
+        }
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:result];
+        completion(pluginResult, callbackId);
     }
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:result];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-  }
 }
 
 - (void) saveWorkout:(CDVInvokedUrlCommand*)command {
