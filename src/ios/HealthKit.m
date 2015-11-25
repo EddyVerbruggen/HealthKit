@@ -290,7 +290,9 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                                           milesString, @"miles",
                                           calories, @"calories",
                                           source.bundleIdentifier, HKPluginKeySourceBundleId,
+                                          source.name, HKPluginKeySourceName,
                                           workoutActivity, @"activityType",
+                                          [workout.UUID UUIDString], @"UUID",
                                           nil
                                           ];
             
