@@ -119,6 +119,8 @@
       return @"HKWorkoutActivityTypeWrestling";
     case HKWorkoutActivityTypeYoga:
       return @"HKWorkoutActivityTypeYoga";
+    case HKWorkoutActivityTypeOther:
+      return @"HKWorkoutActivityTypeOther";
     default:
       return @"unknown";
   }
@@ -237,6 +239,8 @@
     return HKWorkoutActivityTypeWaterSports;
   } else if ([which isEqualToString:@"HKWorkoutActivityTypeWrestling"]) {
     return HKWorkoutActivityTypeWrestling;
+  } else if ([which isEqualToString:@"HKWorkoutActivityTypeOther"]) {
+    return HKWorkoutActivityTypeOther;
   } else {
     return HKWorkoutActivityTypeYoga;
   }
