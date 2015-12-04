@@ -269,7 +269,7 @@ static NSString *const HKPluginKeyUUID = @"UUID";
             // iOS 9 moves the source property to a collection of revisions
             HKSource *source = nil;
             if([workout respondsToSelector:@selector(sourceRevision)]) {
-                source = workout.sourceRevision.source;
+                source = [[workout valueForKey: @"sourceRevision"] valueForKey: @"source"];
             } else {
                 source = workout.source;
             }
