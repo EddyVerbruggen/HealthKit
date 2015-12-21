@@ -42,8 +42,17 @@ static NSString *const HKPluginKeyUUID = @"UUID";
   NSArray *readTypes = [args objectForKey:HKPluginKeyReadTypes];
   NSSet *readDataTypes = [[NSSet alloc] init];
   for (int i=0; i<[readTypes count]; i++) {
+      
     NSString *elem = [readTypes objectAtIndex:i];
-    HKObjectType *type = [self getHKObjectType:elem];
+      
+    HKObjectType *type = nil;
+      
+    if([elem isEqual: @"HKWorkoutTypeIdentifier"]) {
+        type = [self getHKObjectType:elem];
+    }else{
+        type = [HKObjectType workoutType];
+    }
+      
     if (type == nil) {
       CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"readTypes contains an invalid value"];
       [result setKeepCallbackAsBool:YES];
@@ -59,7 +68,15 @@ static NSString *const HKPluginKeyUUID = @"UUID";
   NSSet *writeDataTypes = [[NSSet alloc] init];
   for (int i=0; i<[writeTypes count]; i++) {
     NSString *elem = [writeTypes objectAtIndex:i];
-    HKObjectType *type = [self getHKObjectType:elem];
+    
+      HKObjectType *type = nil;
+      
+      if([elem isEqual: @"HKWorkoutTypeIdentifier"]) {
+          type = [self getHKObjectType:elem];
+      }else{
+          type = [HKObjectType workoutType];
+      }
+      
     if (type == nil) {
       CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"writeTypes contains an invalid value"];
       [result setKeepCallbackAsBool:YES];
