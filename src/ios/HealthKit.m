@@ -265,19 +265,19 @@ static NSString *const HKPluginKeyUUID = @"UUID";
           
           for (HKWorkout *workout in results) {
             NSString *workoutActivity = [WorkoutActivityConversion convertHKWorkoutActivityTypeToString:workout.workoutActivityType];
-            
+
             // iOS 9 moves the source property to a collection of revisions
             HKSource *source = nil;
             if([workout respondsToSelector:@selector(sourceRevision)]) {
-                source = workout.sourceRevision.source;
+                source = [[workout valueForKey: @"sourceRevision"] valueForKey: @"source"];
             } else {
                 source = workout.source;
             }
-            
+
             // TODO: use a float value, or switch to metric
             double miles = [workout.totalDistance doubleValueForUnit:[HKUnit mileUnit]];
             NSString *milesString = [NSString stringWithFormat:@"%ld", (long)miles];
-            
+
             NSEnergyFormatter *energyFormatter = [NSEnergyFormatter new];
             energyFormatter.forFoodEnergyUse = NO;
             double joules = [workout.totalEnergyBurned doubleValueForUnit:[HKUnit jouleUnit]];
@@ -290,7 +290,9 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                                           milesString, @"miles",
                                           calories, @"calories",
                                           source.bundleIdentifier, HKPluginKeySourceBundleId,
+                                          source.name, HKPluginKeySourceName,
                                           workoutActivity, @"activityType",
+                                          [workout.UUID UUIDString], @"UUID",
                                           nil
                                           ];
             
@@ -717,7 +719,14 @@ static NSString *const HKPluginKeyUUID = @"UUID";
     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
     return;
   }
-  HKUnit *unit = unitString!=nil ? [HKUnit unitFromString:unitString] : nil;
+  HKUnit *unit = nil;
+  if (unitString != nil) {
+    // issue 51
+    if ([unitString isEqualToString:@"percent"]) {
+      unitString = @"%";
+    }
+    unit = [HKUnit unitFromString:unitString];
+  }
   // TODO check that unit is compatible with sampleType if sample type of HKQuantityType
   NSPredicate *predicate = [HKQuery predicateForSamplesWithStartDate:startDate endDate:endDate options:HKQueryOptionStrictStartDate];
   
