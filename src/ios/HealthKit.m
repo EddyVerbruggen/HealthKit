@@ -276,7 +276,9 @@ static NSString *const HKPluginKeyUUID = @"UUID";
           });
         } else {
           NSDateFormatter *df = [[NSDateFormatter alloc] init];
-          [df setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+          NSLocale *enUSPOSIXLocale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
+          [df setLocale:enUSPOSIXLocale];
+          [df setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
           
           NSMutableArray *finalResults = [[NSMutableArray alloc] initWithCapacity:results.count];
           
@@ -430,7 +432,10 @@ static NSString *const HKPluginKeyUUID = @"UUID";
         if (mostRecentQuantity) {
           double usersWeight = [mostRecentQuantity doubleValueForUnit:preferredUnit];
           NSDateFormatter *df = [[NSDateFormatter alloc] init];
-          [df setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+          NSLocale *enUSPOSIXLocale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
+          [df setLocale:enUSPOSIXLocale];
+          [df setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
+            
           NSMutableDictionary *entry = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
                                         [NSNumber numberWithDouble:usersWeight], HKPluginKeyValue,
                                         unit, HKPluginKeyUnit,
@@ -528,7 +533,10 @@ static NSString *const HKPluginKeyUUID = @"UUID";
         if (mostRecentQuantity) {
           double usersHeight = [mostRecentQuantity doubleValueForUnit:preferredUnit];
           NSDateFormatter *df = [[NSDateFormatter alloc] init];
-          [df setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+          NSLocale *enUSPOSIXLocale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
+          [df setLocale:enUSPOSIXLocale];
+          [df setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
+            
           NSMutableDictionary *entry = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
                                         [NSNumber numberWithDouble:usersHeight], HKPluginKeyValue,
                                         unit, HKPluginKeyUnit,
@@ -613,7 +621,11 @@ static NSString *const HKPluginKeyUUID = @"UUID";
 - (void) readDateOfBirth:(CDVInvokedUrlCommand*)command {
   // TODO pass in dateformat?
   NSDateFormatter *df = [[NSDateFormatter alloc] init];
-  [df setDateFormat:@"yyyy-MM-dd"];
+  NSLocale *enUSPOSIXLocale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
+  [df setLocale:enUSPOSIXLocale];
+  [df setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
+    
+    
   HKCharacteristicType *birthdayType = [HKObjectType characteristicTypeForIdentifier:HKCharacteristicTypeIdentifierDateOfBirth];
   [self.healthStore requestAuthorizationToShareTypes:nil readTypes:[NSSet setWithObjects: birthdayType, nil] completion:^(BOOL success, NSError *error) {
     if (success) {
@@ -769,7 +781,9 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                                 } else {
                                   
                                   NSDateFormatter *df = [[NSDateFormatter alloc] init];
-                                  [df setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+                                  NSLocale *enUSPOSIXLocale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
+                                  [df setLocale:enUSPOSIXLocale];
+                                  [df setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
                                   
                                   
                                   NSMutableArray *finalResults = [[NSMutableArray alloc] initWithCapacity:results.count];
@@ -865,11 +879,10 @@ static NSString *const HKPluginKeyUUID = @"UUID";
     NSMutableDictionary *args = [command.arguments objectAtIndex:0];
     NSDate *startDate = [NSDate dateWithTimeIntervalSince1970:[[args objectForKey:HKPluginKeyStartDate] longValue]];
     NSDate *endDate = [NSDate dateWithTimeIntervalSince1970:[[args objectForKey:HKPluginKeyEndDate] longValue]];
-
+    
     NSString *sampleTypeString = [args objectForKey:HKPluginKeySampleType];
     NSString *unitString = [args objectForKey:HKPluginKeyUnit];
     
-    //VITO
     NSCalendar *calendar = [NSCalendar currentCalendar];
     NSDateComponents *interval = [[NSDateComponents alloc] init];
     interval.day = 1; //TODO pass as argument
@@ -880,17 +893,27 @@ static NSString *const HKPluginKeyUUID = @"UUID";
     NSDate *anchorDate = [calendar dateFromComponents:anchorComponents];
     HKQuantityType *quantityType = [HKObjectType quantityTypeForIdentifier:sampleTypeString];
     
+    // NSPredicate *predicate = [HKQuery predicateForSamplesWithStartDate:startDate endDate:endDate options:HKQueryOptionStrictStartDate];
+    NSPredicate *predicate = nil;
+    
+    HKStatisticsOptions statOpt = HKStatisticsOptionNone;
+    
     
     if (quantityType==nil) {
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"sampleType was invalid"];
         [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
         return;
+    }else if([sampleTypeString isEqualToString:@"HKQuantityTypeIdentifierHeartRate"]){
+        statOpt = HKStatisticsOptionDiscreteAverage;
+        
+    }else{ //HKQuantityTypeIdentifierStepCount, etc...
+        statOpt = HKStatisticsOptionCumulativeSum;
     }
     
     
     HKStatisticsCollectionQuery *query = [[HKStatisticsCollectionQuery alloc] initWithQuantityType:quantityType
-                                                                           quantitySamplePredicate:nil
-                                                                                           options:HKStatisticsOptionCumulativeSum
+                                                                           quantitySamplePredicate:predicate
+                                                                                           options: statOpt
                                                                                         anchorDate:anchorDate
                                                                                 intervalComponents:interval];
     
@@ -902,7 +925,10 @@ static NSString *const HKPluginKeyUUID = @"UUID";
         } else
         {
             NSDateFormatter *df = [[NSDateFormatter alloc] init];
-            [df setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+            NSLocale *enUSPOSIXLocale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
+            [df setLocale:enUSPOSIXLocale];
+            [df setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
+
             
             // Get the daily steps over the past n days
             HKUnit *unit = unitString!=nil ? [HKUnit unitFromString:unitString] : [HKUnit countUnit];
@@ -920,12 +946,21 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                                                [df stringFromDate:valueStartDate], HKPluginKeyStartDate,
                                                [df stringFromDate:valueEndDate], HKPluginKeyEndDate,
                                                nil];
-                 HKQuantity *quantity = result.sumQuantity;
+                 HKQuantity *quantity = nil;
+                 if(statOpt == HKStatisticsOptionDiscreteAverage){
+                     quantity = result.averageQuantity;
+                 }
+                 else if(statOpt == HKStatisticsOptionCumulativeSum){
+                     quantity = result.sumQuantity;
+                 }
+                 else{
+                     quantity = result.maximumQuantity; //don't think is correct. Should never go here
+                 };
                  double value = [quantity doubleValueForUnit:unit];
                  [entry setValue:[NSNumber numberWithDouble:value] forKey:@"quantity"];
                  [finalResults addObject:entry];
              }];
-          
+            
             dispatch_sync(dispatch_get_main_queue(), ^{
                 CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:finalResults];
                 [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
@@ -933,9 +968,9 @@ static NSString *const HKPluginKeyUUID = @"UUID";
         }
     };
     
-    //END - Vito
     [self.healthStore executeQuery:query];
 }
+
 
 - (void) saveQuantitySample:(CDVInvokedUrlCommand*)command {
   NSMutableDictionary *args = [command.arguments objectAtIndex:0];
