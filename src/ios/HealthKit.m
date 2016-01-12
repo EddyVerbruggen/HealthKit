@@ -860,93 +860,81 @@ static NSString *const HKPluginKeyUUID = @"UUID";
   }];
 }
 
-- (void) queryCorrelationType:(CDVInvokedUrlCommand*)command {
-  NSMutableDictionary *args = [command.arguments objectAtIndex:0];
-  NSDate *startDate = [NSDate dateWithTimeIntervalSince1970:[[args objectForKey:HKPluginKeyStartDate] longValue]];
-  NSDate *endDate = [NSDate dateWithTimeIntervalSince1970:[[args objectForKey:HKPluginKeyEndDate] longValue]];
-  NSString *correlationTypeString = [args objectForKey:HKPluginKeyCorrelationType];
-  NSString *unitString = [args objectForKey:HKPluginKeyUnit];
-  
-  HKCorrelationType *type = (HKCorrelationType*)[self getHKSampleType:correlationTypeString];
-  if (type==nil) {
-    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"sampleType was invalid"];
-    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
-    return;
-  }
-  HKUnit *unit = unitString!=nil ? [HKUnit unitFromString:unitString] : nil;
-  // TODO check that unit is compatible with sampleType if sample type of HKQuantityType
-  NSPredicate *predicate = [HKQuery predicateForSamplesWithStartDate:startDate endDate:endDate options:HKQueryOptionStrictStartDate];
-  
-  HKCorrelationQuery *query = [[HKCorrelationQuery alloc] initWithType:type predicate:predicate samplePredicates:nil completion:^(HKCorrelationQuery *query, NSArray *correlations, NSError *error) {
-    if (error) {
-      dispatch_sync(dispatch_get_main_queue(), ^{
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
+//Get aggregated data in a day
+- (void) queryDailySampleTypeStats:(CDVInvokedUrlCommand*)command {
+    NSMutableDictionary *args = [command.arguments objectAtIndex:0];
+    NSDate *startDate = [NSDate dateWithTimeIntervalSince1970:[[args objectForKey:HKPluginKeyStartDate] longValue]];
+    NSDate *endDate = [NSDate dateWithTimeIntervalSince1970:[[args objectForKey:HKPluginKeyEndDate] longValue]];
+
+    NSString *sampleTypeString = [args objectForKey:HKPluginKeySampleType];
+    NSString *unitString = [args objectForKey:HKPluginKeyUnit];
+    
+    //VITO
+    NSCalendar *calendar = [NSCalendar currentCalendar];
+    NSDateComponents *interval = [[NSDateComponents alloc] init];
+    interval.day = 1; //TODO pass as argument
+    
+    NSDateComponents *anchorComponents = [calendar components:NSCalendarUnitDay | NSCalendarUnitMonth | NSCalendarUnitYear
+                                                     fromDate:endDate]; //[NSDate date]];
+    anchorComponents.hour = 0; //at 00:00 AM
+    NSDate *anchorDate = [calendar dateFromComponents:anchorComponents];
+    HKQuantityType *quantityType = [HKObjectType quantityTypeForIdentifier:sampleTypeString];
+    
+    
+    if (quantityType==nil) {
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"sampleType was invalid"];
         [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
-      });
-    } else {
-      NSDateFormatter *df = [[NSDateFormatter alloc] init];
-      [df setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-      
-      NSMutableArray *finalResults = [[NSMutableArray alloc] initWithCapacity:correlations.count];
-      for (HKSample *sample in correlations) {
-        NSDate *startSample = sample.startDate;
-        NSDate *endSample = sample.endDate;
-        NSMutableDictionary *entry = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
-                                      [df stringFromDate:startSample], HKPluginKeyStartDate,
-                                      [df stringFromDate:endSample], HKPluginKeyEndDate,
-                                      nil];
-        if ([sample isKindOfClass:[HKCategorySample class]]) {
-          HKCategorySample *csample = (HKCategorySample *)sample;
-          [entry setValue:[NSNumber numberWithLong:csample.value] forKey:HKPluginKeyValue];
-          [entry setValue:csample.categoryType.identifier forKey:@"catagoryType.identifier"];
-          [entry setValue:csample.categoryType.description forKey:@"catagoryType.description"];
-        } else if ([sample isKindOfClass:[HKCorrelation class]]) {
-          HKCorrelation* correlation = (HKCorrelation*)sample;
-          [entry setValue:correlation.correlationType.identifier forKey:HKPluginKeyCorrelationType];
-          // correlation.metadata may contain crap which can't be parsed to valid JSON data
-          if (correlation.metadata == nil || ![NSJSONSerialization isValidJSONObject:correlation.metadata]) {
-            [entry setValue:@{} forKey:HKPluginKeyMetadata];
-          } else {
-            [entry setValue:correlation.metadata forKey:HKPluginKeyMetadata];
-          }
-          [entry setValue:correlation.UUID.UUIDString forKey:HKPluginKeyUUID];
-          NSMutableArray* samples = [NSMutableArray array];
-          for (HKQuantitySample* sample in correlation.objects) {
-            // if an incompatible unit was passed, the sample is not included
-            if ([sample.quantity isCompatibleWithUnit:unit]) {
-              [samples addObject: @{HKPluginKeyStartDate:[df stringFromDate:sample.startDate],
-                                    HKPluginKeyEndDate:[df stringFromDate:sample.endDate],
-                                    HKPluginKeySampleType:sample.sampleType.identifier,
-                                    HKPluginKeyValue:[NSNumber numberWithDouble:[sample.quantity doubleValueForUnit:unit]], //
-                                    HKPluginKeyUnit:unit.unitString,
-                                    HKPluginKeyMetadata:sample.metadata != nil ? sample.metadata : @{},
-                                    HKPluginKeyUUID:sample.UUID.UUIDString}];
-            }
-          }
-          [entry setValue:samples forKey:HKPluginKeyObjects];
-          // TODO
-        } else if ([sample isKindOfClass:[HKQuantitySample class]]) {
-          HKQuantitySample *qsample = (HKQuantitySample *)sample;
-          // TODO compare with unit
-          [entry setValue:[NSNumber numberWithDouble:[qsample.quantity doubleValueForUnit:unit]] forKey:@"quantity"];
-          
-        } else if ([sample isKindOfClass:[HKCorrelationType class]]) {
-          // TODO
-        } else if ([sample isKindOfClass:[HKWorkout class]]) {
-          HKWorkout *wsample = (HKWorkout*)sample;
-          [entry setValue:[NSNumber numberWithDouble:wsample.duration] forKey:@"duration"];
-        }
-        
-        [finalResults addObject:entry];
-      }
-      
-      dispatch_sync(dispatch_get_main_queue(), ^{
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:finalResults];
-        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
-      });
+        return;
     }
-  }];
-  [self.healthStore executeQuery:query];
+    
+    
+    HKStatisticsCollectionQuery *query = [[HKStatisticsCollectionQuery alloc] initWithQuantityType:quantityType
+                                                                           quantitySamplePredicate:nil
+                                                                                           options:HKStatisticsOptionCumulativeSum
+                                                                                        anchorDate:anchorDate
+                                                                                intervalComponents:interval];
+    
+    // Set the results handler
+    query.initialResultsHandler = ^(HKStatisticsCollectionQuery *query, HKStatisticsCollection *results, NSError *error) {
+        if (error) {
+            // Perform proper error handling here
+            NSLog(@"*** An error occurred while calculating the statistics: %@ ***",error.localizedDescription);
+        } else
+        {
+            NSDateFormatter *df = [[NSDateFormatter alloc] init];
+            [df setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+            
+            // Get the daily steps over the past n days
+            HKUnit *unit = unitString!=nil ? [HKUnit unitFromString:unitString] : [HKUnit countUnit];
+            NSMutableArray *finalResults = [[NSMutableArray alloc] initWithCapacity:[[results statistics ] count]];
+            
+            [results
+             enumerateStatisticsFromDate:startDate
+             toDate:endDate
+             withBlock:^(HKStatistics *result, BOOL *stop) {
+                 
+                 NSDate *valueStartDate = result.startDate;
+                 NSDate *valueEndDate = result.endDate;
+                 
+                 NSMutableDictionary *entry = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
+                                               [df stringFromDate:valueStartDate], HKPluginKeyStartDate,
+                                               [df stringFromDate:valueEndDate], HKPluginKeyEndDate,
+                                               nil];
+                 HKQuantity *quantity = result.sumQuantity;
+                 double value = [quantity doubleValueForUnit:unit];
+                 [entry setValue:[NSNumber numberWithDouble:value] forKey:@"quantity"];
+                 [finalResults addObject:entry];
+             }];
+          
+            dispatch_sync(dispatch_get_main_queue(), ^{
+                CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:finalResults];
+                [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+            });
+        }
+    };
+    
+    //END - Vito
+    [self.healthStore executeQuery:query];
 }
 
 - (void) saveQuantitySample:(CDVInvokedUrlCommand*)command {
