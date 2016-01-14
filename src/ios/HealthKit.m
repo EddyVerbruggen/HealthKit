@@ -846,6 +846,7 @@ static NSString *const HKPluginKeyUUID = @"UUID";
   }];
 }
 
+
 - (void) querySampleTypeAggregated:(CDVInvokedUrlCommand*)command {
     NSMutableDictionary *args = [command.arguments objectAtIndex:0];
     NSDate *startDate = [NSDate dateWithTimeIntervalSince1970:[[args objectForKey:HKPluginKeyStartDate] longValue]];
@@ -856,14 +857,21 @@ static NSString *const HKPluginKeyUUID = @"UUID";
     
     NSCalendar *calendar = [NSCalendar currentCalendar];
     NSDateComponents *interval = [[NSDateComponents alloc] init];
-
+    
     NSString *aggregation = [args objectForKey:HKPluginKeyAggregation];
     // TODO would be nice to also have the dev pass in the nr of hours/days/..
     if ([@"hour" isEqualToString:aggregation]) {
         interval.hour = 1;
-//    } else if ([@"week" isEqualToString:aggregation]) {
-//        interval.week = 1;
-    } else {
+    } else if ([@"week" isEqualToString:aggregation]) {
+        interval.day = 7;
+    }
+    else if ([@"month" isEqualToString:aggregation]) {
+        interval.month = 1;
+    }
+    else if ([@"year" isEqualToString:aggregation]) {
+        interval.year = 1;
+    }
+    else {
         // default 'day'
         interval.day = 1;
     }
@@ -891,60 +899,96 @@ static NSString *const HKPluginKeyUUID = @"UUID";
         statOpt = HKStatisticsOptionCumulativeSum;
     }
     
+    HKUnit *unit = nil;
+    if (unitString != nil) {
+        // issue 51
+        if ([unitString isEqualToString:@"percent"]) {
+            unitString = @"%";
+        }
+        unit = [HKUnit unitFromString:unitString];
+    }
     
-    HKStatisticsCollectionQuery *query = [[HKStatisticsCollectionQuery alloc] initWithQuantityType:quantityType
-                                                                           quantitySamplePredicate:predicate
-                                                                                           options: statOpt
-                                                                                        anchorDate:anchorDate
-                                                                                intervalComponents:interval];
+    HKSampleType *type = [self getHKSampleType:sampleTypeString];
+    if (type==nil) {
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"sampleType was invalid"];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+        return;
+    }
     
-    // Set the results handler
-    query.initialResultsHandler = ^(HKStatisticsCollectionQuery *query, HKStatisticsCollection *results, NSError *error) {
-        if (error) {
-            // Perform proper error handling here
-            NSLog(@"*** An error occurred while calculating the statistics: %@ ***",error.localizedDescription);
-        } else
-        {
-            // Get the daily steps over the past n days
-            HKUnit *unit = unitString!=nil ? [HKUnit unitFromString:unitString] : [HKUnit countUnit];
-            NSMutableArray *finalResults = [[NSMutableArray alloc] initWithCapacity:[[results statistics ] count]];
+    NSSet *requestTypes = [NSSet setWithObjects: type, nil];
+    [self.healthStore requestAuthorizationToShareTypes:nil readTypes:requestTypes completion:^(BOOL success, NSError *error) {
+        if (success) {
+            HKStatisticsCollectionQuery *query = [[HKStatisticsCollectionQuery alloc] initWithQuantityType:quantityType
+                                                                                   quantitySamplePredicate:predicate
+                                                                                                   options: statOpt
+                                                                                                anchorDate:anchorDate
+                                                                                        intervalComponents:interval];
             
-            [results
-             enumerateStatisticsFromDate:startDate
-             toDate:endDate
-             withBlock:^(HKStatistics *result, BOOL *stop) {
-                 
-                 NSDate *valueStartDate = result.startDate;
-                 NSDate *valueEndDate = result.endDate;
-                 
-                 NSMutableDictionary *entry = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
-                                               [self stringFromDate:valueStartDate], HKPluginKeyStartDate,
-                                               [self stringFromDate:valueEndDate], HKPluginKeyEndDate,
-                                               nil];
-                 HKQuantity *quantity = nil;
-                 if(statOpt == HKStatisticsOptionDiscreteAverage){
-                     quantity = result.averageQuantity;
-                 }
-                 else if(statOpt == HKStatisticsOptionCumulativeSum){
-                     quantity = result.sumQuantity;
-                 }
-                 else{
-                     quantity = result.maximumQuantity; //don't think is correct. Should never go here
-                 };
-                 double value = [quantity doubleValueForUnit:unit];
-                 [entry setValue:[NSNumber numberWithDouble:value] forKey:@"quantity"];
-                 [finalResults addObject:entry];
-             }];
+            // Set the results handler
+            query.initialResultsHandler = ^(HKStatisticsCollectionQuery *query, HKStatisticsCollection *results, NSError *error) {
+                if (error) {
+                    // Perform proper error handling here
+                    //                    NSLog(@"*** An error occurred while calculating the statistics: %@ ***",error.localizedDescription);
+                    dispatch_sync(dispatch_get_main_queue(), ^{
+                        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
+                        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+                    });
+                } else
+                {
+                    // Get the daily steps over the past n days
+                    //            HKUnit *unit = unitString!=nil ? [HKUnit unitFromString:unitString] : [HKUnit countUnit];
+                    NSMutableArray *finalResults = [[NSMutableArray alloc] initWithCapacity:[[results statistics ] count]];
+                    
+                    [results
+                     enumerateStatisticsFromDate:startDate
+                     toDate:endDate
+                     withBlock:^(HKStatistics *result, BOOL *stop) {
+                         
+                         NSDate *valueStartDate = result.startDate;
+                         NSDate *valueEndDate = result.endDate;
+                         
+                         NSMutableDictionary *entry = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
+                                                       [self stringFromDate:valueStartDate], HKPluginKeyStartDate,
+                                                       [self stringFromDate:valueEndDate], HKPluginKeyEndDate,
+                                                       nil];
+                         HKQuantity *quantity = nil;
+                         if(statOpt == HKStatisticsOptionDiscreteAverage){
+                             quantity = result.averageQuantity;
+                         }
+                         else if(statOpt == HKStatisticsOptionCumulativeSum){
+                             quantity = result.sumQuantity;
+                         }
+                         else{
+                             quantity = result.maximumQuantity; //don't think is correct. Should never go here
+                         };
+                         double value = [quantity doubleValueForUnit:unit];
+                         [entry setValue:[NSNumber numberWithDouble:value] forKey:@"quantity"];
+                         [finalResults addObject:entry];
+                     }];
+                    
+                    dispatch_sync(dispatch_get_main_queue(), ^{
+                        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:finalResults];
+                        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+                    });
+                }
+            };
             
+            [self.healthStore executeQuery:query];
+            
+            
+        }
+        else{
             dispatch_sync(dispatch_get_main_queue(), ^{
-                CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:finalResults];
+                CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
                 [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
             });
         }
-    };
+    }];
     
-    [self.healthStore executeQuery:query];
+    
+    
 }
+
 
 
 - (void) queryCorrelationType:(CDVInvokedUrlCommand*)command {
