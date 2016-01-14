@@ -25,6 +25,7 @@
 * `saveWorkout`
 * `findWorkouts`: no params yet, so this will return all workouts ever of any type
 * `querySampleType`
+* `querySampleTypeAggregated`
 * `sumQuantityType`
 * `monitorSampleType`
 * `saveQuantitySample`

@@ -4,6 +4,7 @@
 @interface HealthKit :CDVPlugin
 
 @property (nonatomic) HKHealthStore *healthStore;
+@property (nonatomic) NSDateFormatter *dateFormatter;
 
 - (void) available:(CDVInvokedUrlCommand*)command;
 - (void) checkAuthStatus:(CDVInvokedUrlCommand*)command;
@@ -24,9 +25,9 @@
 
 - (void) monitorSampleType:(CDVInvokedUrlCommand*)command;
 - (void) sumQuantityType:(CDVInvokedUrlCommand*)command;
-- (void) querySampleType:(CDVInvokedUrlCommand*)command;
 
-- (void) querySampleTypeStats:(CDVInvokedUrlCommand*)command;
+- (void) querySampleType:(CDVInvokedUrlCommand*)command;
+- (void) querySampleTypeAggregated:(CDVInvokedUrlCommand*)command;
 
 - (void) saveQuantitySample:(CDVInvokedUrlCommand*)command;
 - (void) saveCorrelation:(CDVInvokedUrlCommand*)command;

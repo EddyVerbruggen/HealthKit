@@ -12,6 +12,7 @@ static NSString *const HKPluginKeyType = @"type";
 static NSString *const HKPluginKeyStartDate = @"startDate";
 static NSString *const HKPluginKeyEndDate = @"endDate";
 static NSString *const HKPluginKeySampleType = @"sampleType";
+static NSString *const HKPluginKeyAggregation = @"aggregation";
 static NSString *const HKPluginKeyUnit = @"unit";
 static NSString *const HKPluginKeyAmount = @"amount";
 static NSString *const HKPluginKeyValue = @"value";
@@ -275,11 +276,6 @@ static NSString *const HKPluginKeyUUID = @"UUID";
             [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
           });
         } else {
-          NSDateFormatter *df = [[NSDateFormatter alloc] init];
-          NSLocale *enUSPOSIXLocale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
-          [df setLocale:enUSPOSIXLocale];
-          [df setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
-          
           NSMutableArray *finalResults = [[NSMutableArray alloc] initWithCapacity:results.count];
           
           for (HKWorkout *workout in results) {
@@ -304,8 +300,8 @@ static NSString *const HKPluginKeyUUID = @"UUID";
             
             NSMutableDictionary *entry = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
                                           [NSNumber numberWithDouble:workout.duration], @"duration",
-                                          [df stringFromDate:workout.startDate], HKPluginKeyStartDate,
-                                          [df stringFromDate:workout.endDate], HKPluginKeyEndDate,
+                                          [self stringFromDate:workout.startDate], HKPluginKeyStartDate,
+                                          [self stringFromDate:workout.endDate], HKPluginKeyEndDate,
                                           milesString, @"miles",
                                           calories, @"calories",
                                           source.bundleIdentifier, HKPluginKeySourceBundleId,
@@ -431,15 +427,10 @@ static NSString *const HKPluginKeyUUID = @"UUID";
       [self.healthStore aapl_mostRecentQuantitySampleOfType:weightType predicate:nil completion:^(HKQuantity *mostRecentQuantity, NSDate *mostRecentDate, NSError *errorInner) {
         if (mostRecentQuantity) {
           double usersWeight = [mostRecentQuantity doubleValueForUnit:preferredUnit];
-          NSDateFormatter *df = [[NSDateFormatter alloc] init];
-          NSLocale *enUSPOSIXLocale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
-          [df setLocale:enUSPOSIXLocale];
-          [df setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
-            
           NSMutableDictionary *entry = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
                                         [NSNumber numberWithDouble:usersWeight], HKPluginKeyValue,
                                         unit, HKPluginKeyUnit,
-                                        [df stringFromDate:mostRecentDate], @"date",
+                                        [self stringFromDate:mostRecentDate], @"date",
                                         nil];
           dispatch_async(dispatch_get_main_queue(), ^{
             CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:entry];
@@ -532,15 +523,10 @@ static NSString *const HKPluginKeyUUID = @"UUID";
       [self.healthStore aapl_mostRecentQuantitySampleOfType:heightType predicate:nil completion:^(HKQuantity *mostRecentQuantity, NSDate *mostRecentDate, NSError *errorInner) { // TODO use
         if (mostRecentQuantity) {
           double usersHeight = [mostRecentQuantity doubleValueForUnit:preferredUnit];
-          NSDateFormatter *df = [[NSDateFormatter alloc] init];
-          NSLocale *enUSPOSIXLocale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
-          [df setLocale:enUSPOSIXLocale];
-          [df setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
-            
           NSMutableDictionary *entry = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
                                         [NSNumber numberWithDouble:usersHeight], HKPluginKeyValue,
                                         unit, HKPluginKeyUnit,
-                                        [df stringFromDate:mostRecentDate], @"date",
+                                        [self stringFromDate:mostRecentDate], @"date",
                                         nil];
           dispatch_async(dispatch_get_main_queue(), ^{
             CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:entry];
@@ -619,19 +605,12 @@ static NSString *const HKPluginKeyUUID = @"UUID";
 }
 
 - (void) readDateOfBirth:(CDVInvokedUrlCommand*)command {
-  // TODO pass in dateformat?
-  NSDateFormatter *df = [[NSDateFormatter alloc] init];
-  NSLocale *enUSPOSIXLocale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
-  [df setLocale:enUSPOSIXLocale];
-  [df setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
-    
-    
   HKCharacteristicType *birthdayType = [HKObjectType characteristicTypeForIdentifier:HKCharacteristicTypeIdentifierDateOfBirth];
   [self.healthStore requestAuthorizationToShareTypes:nil readTypes:[NSSet setWithObjects: birthdayType, nil] completion:^(BOOL success, NSError *error) {
     if (success) {
       NSDate *dateOfBirth = [self.healthStore dateOfBirthWithError:&error];
       if (dateOfBirth) {
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[df stringFromDate:dateOfBirth]];
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[self stringFromDate:dateOfBirth]];
         [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
       } else {
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
@@ -779,13 +758,6 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                                     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
                                   });
                                 } else {
-                                  
-                                  NSDateFormatter *df = [[NSDateFormatter alloc] init];
-                                  NSLocale *enUSPOSIXLocale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
-                                  [df setLocale:enUSPOSIXLocale];
-                                  [df setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
-                                  
-                                  
                                   NSMutableArray *finalResults = [[NSMutableArray alloc] initWithCapacity:results.count];
                                   
                                   for (HKSample *sample in results) {
@@ -794,8 +766,8 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                                     NSDate *endSample = sample.endDate;
                                     
                                     NSMutableDictionary *entry = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
-                                                                  [df stringFromDate:startSample], HKPluginKeyStartDate,
-                                                                  [df stringFromDate:endSample], HKPluginKeyEndDate,
+                                                                  [self stringFromDate:startSample], HKPluginKeyStartDate,
+                                                                  [self stringFromDate:endSample], HKPluginKeyEndDate,
                                                                   nil];
                                     
                                     if ([sample isKindOfClass:[HKCategorySample class]]) {
@@ -806,8 +778,8 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                                       [entry setValue:csample.UUID.UUIDString forKey:HKPluginKeyUUID];
                                       [entry setValue:csample.source.name forKey:HKPluginKeySourceName];
                                       [entry setValue:csample.source.bundleIdentifier forKey:HKPluginKeySourceBundleId];
-                                      [entry setValue:[df stringFromDate:csample.startDate] forKey:HKPluginKeyStartDate];
-                                      [entry setValue:[df stringFromDate:csample.endDate] forKey:HKPluginKeyEndDate];
+                                      [entry setValue:[self stringFromDate:csample.startDate] forKey:HKPluginKeyStartDate];
+                                      [entry setValue:[self stringFromDate:csample.endDate] forKey:HKPluginKeyEndDate];
                                       if (csample.metadata == nil || ![NSJSONSerialization isValidJSONObject:csample.metadata]) {
                                         [entry setValue:@{} forKey:HKPluginKeyMetadata];
                                       } else {
@@ -824,16 +796,16 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                                       [entry setValue:correlation.UUID.UUIDString forKey:HKPluginKeyUUID];
                                       [entry setValue:correlation.source.name forKey:HKPluginKeySourceName];
                                       [entry setValue:correlation.source.bundleIdentifier forKey:HKPluginKeySourceBundleId];
-                                      [entry setValue:[df stringFromDate:correlation.startDate] forKey:HKPluginKeyStartDate];
-                                      [entry setValue:[df stringFromDate:correlation.endDate] forKey:HKPluginKeyEndDate];
+                                      [entry setValue:[self stringFromDate:correlation.startDate] forKey:HKPluginKeyStartDate];
+                                      [entry setValue:[self stringFromDate:correlation.endDate] forKey:HKPluginKeyEndDate];
                                     } else if ([sample isKindOfClass:[HKQuantitySample class]]) {
                                       HKQuantitySample *qsample = (HKQuantitySample *)sample;
                                       [entry setValue:[NSNumber numberWithDouble:[qsample.quantity doubleValueForUnit:unit]] forKey:@"quantity"];
                                       [entry setValue:qsample.UUID.UUIDString forKey:HKPluginKeyUUID];
                                       [entry setValue:qsample.source.name forKey:HKPluginKeySourceName];
                                       [entry setValue:qsample.source.bundleIdentifier forKey:HKPluginKeySourceBundleId];
-                                      [entry setValue:[df stringFromDate:qsample.startDate] forKey:HKPluginKeyStartDate];
-                                      [entry setValue:[df stringFromDate:qsample.endDate] forKey:HKPluginKeyEndDate];
+                                      [entry setValue:[self stringFromDate:qsample.startDate] forKey:HKPluginKeyStartDate];
+                                      [entry setValue:[self stringFromDate:qsample.endDate] forKey:HKPluginKeyEndDate];
                                       if (qsample.metadata == nil || ![NSJSONSerialization isValidJSONObject:qsample.metadata]) {
                                         [entry setValue:@{} forKey:HKPluginKeyMetadata];
                                       } else {
@@ -844,8 +816,8 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                                       [entry setValue:wsample.UUID.UUIDString forKey:HKPluginKeyUUID];
                                       [entry setValue:wsample.source.name forKey:HKPluginKeySourceName];
                                       [entry setValue:wsample.source.bundleIdentifier forKey:HKPluginKeySourceBundleId];
-                                      [entry setValue:[df stringFromDate:wsample.startDate] forKey:HKPluginKeyStartDate];
-                                      [entry setValue:[df stringFromDate:wsample.endDate] forKey:HKPluginKeyEndDate];
+                                      [entry setValue:[self stringFromDate:wsample.startDate] forKey:HKPluginKeyStartDate];
+                                      [entry setValue:[self stringFromDate:wsample.endDate] forKey:HKPluginKeyEndDate];
                                       [entry setValue:[NSNumber numberWithDouble:wsample.duration] forKey:@"duration"];
                                       if (wsample.metadata == nil || ![NSJSONSerialization isValidJSONObject:wsample.metadata]) {
                                         [entry setValue:@{} forKey:HKPluginKeyMetadata];
@@ -874,8 +846,7 @@ static NSString *const HKPluginKeyUUID = @"UUID";
   }];
 }
 
-//Get aggregated data in a day
-- (void) queryDailySampleTypeStats:(CDVInvokedUrlCommand*)command {
+- (void) querySampleTypeAggregated:(CDVInvokedUrlCommand*)command {
     NSMutableDictionary *args = [command.arguments objectAtIndex:0];
     NSDate *startDate = [NSDate dateWithTimeIntervalSince1970:[[args objectForKey:HKPluginKeyStartDate] longValue]];
     NSDate *endDate = [NSDate dateWithTimeIntervalSince1970:[[args objectForKey:HKPluginKeyEndDate] longValue]];
@@ -885,7 +856,17 @@ static NSString *const HKPluginKeyUUID = @"UUID";
     
     NSCalendar *calendar = [NSCalendar currentCalendar];
     NSDateComponents *interval = [[NSDateComponents alloc] init];
-    interval.day = 1; //TODO pass as argument
+
+    NSString *aggregation = [args objectForKey:HKPluginKeyAggregation];
+    // TODO would be nice to also have the dev pass in the nr of hours/days/..
+    if ([@"hour" isEqualToString:aggregation]) {
+        interval.hour = 1;
+//    } else if ([@"week" isEqualToString:aggregation]) {
+//        interval.week = 1;
+    } else {
+        // default 'day'
+        interval.day = 1;
+    }
     
     NSDateComponents *anchorComponents = [calendar components:NSCalendarUnitDay | NSCalendarUnitMonth | NSCalendarUnitYear
                                                      fromDate:endDate]; //[NSDate date]];
@@ -924,12 +905,6 @@ static NSString *const HKPluginKeyUUID = @"UUID";
             NSLog(@"*** An error occurred while calculating the statistics: %@ ***",error.localizedDescription);
         } else
         {
-            NSDateFormatter *df = [[NSDateFormatter alloc] init];
-            NSLocale *enUSPOSIXLocale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
-            [df setLocale:enUSPOSIXLocale];
-            [df setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
-
-            
             // Get the daily steps over the past n days
             HKUnit *unit = unitString!=nil ? [HKUnit unitFromString:unitString] : [HKUnit countUnit];
             NSMutableArray *finalResults = [[NSMutableArray alloc] initWithCapacity:[[results statistics ] count]];
@@ -943,8 +918,8 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                  NSDate *valueEndDate = result.endDate;
                  
                  NSMutableDictionary *entry = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
-                                               [df stringFromDate:valueStartDate], HKPluginKeyStartDate,
-                                               [df stringFromDate:valueEndDate], HKPluginKeyEndDate,
+                                               [self stringFromDate:valueStartDate], HKPluginKeyStartDate,
+                                               [self stringFromDate:valueEndDate], HKPluginKeyEndDate,
                                                nil];
                  HKQuantity *quantity = nil;
                  if(statOpt == HKStatisticsOptionDiscreteAverage){
@@ -996,16 +971,13 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                 [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
             });
         } else {
-            NSDateFormatter *df = [[NSDateFormatter alloc] init];
-            [df setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-            
             NSMutableArray *finalResults = [[NSMutableArray alloc] initWithCapacity:correlations.count];
             for (HKSample *sample in correlations) {
                 NSDate *startSample = sample.startDate;
                 NSDate *endSample = sample.endDate;
                 NSMutableDictionary *entry = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
-                                              [df stringFromDate:startSample], HKPluginKeyStartDate,
-                                              [df stringFromDate:endSample], HKPluginKeyEndDate,
+                                              [self stringFromDate:startSample], HKPluginKeyStartDate,
+                                              [self stringFromDate:endSample], HKPluginKeyEndDate,
                                               nil];
                 if ([sample isKindOfClass:[HKCategorySample class]]) {
                     HKCategorySample *csample = (HKCategorySample *)sample;
@@ -1026,8 +998,8 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                     for (HKQuantitySample* sample in correlation.objects) {
                         // if an incompatible unit was passed, the sample is not included
                         if ([sample.quantity isCompatibleWithUnit:unit]) {
-                            [samples addObject: @{HKPluginKeyStartDate:[df stringFromDate:sample.startDate],
-                                                  HKPluginKeyEndDate:[df stringFromDate:sample.endDate],
+                            [samples addObject: @{HKPluginKeyStartDate:[self stringFromDate:sample.startDate],
+                                                  HKPluginKeyEndDate:[self stringFromDate:sample.endDate],
                                                   HKPluginKeySampleType:sample.sampleType.identifier,
                                                   HKPluginKeyValue:[NSNumber numberWithDouble:[sample.quantity doubleValueForUnit:unit]], //
                                                   HKPluginKeyUnit:unit.unitString,
@@ -1125,6 +1097,16 @@ static NSString *const HKPluginKeyUUID = @"UUID";
 
 
 #pragma mark - helper methods
+
+- (NSString*) stringFromDate:(NSDate*)date {
+    if (_dateFormatter == nil) {
+        _dateFormatter = [[NSDateFormatter alloc] init];
+        [_dateFormatter setLocale:[NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"]];
+        [_dateFormatter setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
+    }
+    return [_dateFormatter stringFromDate:date];
+}
+
 - (HKUnit*) getUnit:(NSString*) type : (NSString*) expected {
   HKUnit *localUnit;
   @try {

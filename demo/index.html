@@ -49,6 +49,8 @@
     <br/><br/>
     <button onclick="querySampleType()">Query Sample</button>
     <br/><br/>
+    <button onclick="querySampleTypeAggregated()">Query Sample Aggregated</button>
+    <br/><br/>
     <button onclick="saveHeight()">Save Height</button>
     &nbsp;&nbsp;
     <button onclick="readHeight()">Read Height</button>
@@ -227,6 +229,20 @@
           'startDate': new Date(new Date().getTime() - 3 * 24 * 60 * 60 * 1000), // three days ago
           'endDate': new Date(), // now
           'sampleType': 'HKQuantityTypeIdentifierStepCount', // anything in HealthKit/HKTypeIdentifiers.h
+          'unit': 'count' // make sure this is compatible with the sampleType
+        },
+        callback,
+        callback
+    );
+  }
+
+  function querySampleTypeAggregated() {
+    window.plugins.healthkit.querySampleTypeAggregated(
+        {
+          'startDate': new Date(new Date().getTime() - 3 * 24 * 60 * 60 * 1000), // three days ago
+          'endDate': new Date(), // now
+          'aggregation': 'hour', // 'hour' or 'day', default 'day'
+          'sampleType': 'HKQuantityTypeIdentifierStepCount', // any HKQuantityType
           'unit': 'count' // make sure this is compatible with the sampleType
         },
         callback,
