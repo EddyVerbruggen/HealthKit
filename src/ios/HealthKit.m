@@ -773,8 +773,8 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                                     if ([sample isKindOfClass:[HKCategorySample class]]) {
                                       HKCategorySample *csample = (HKCategorySample *)sample;
                                       [entry setValue:[NSNumber numberWithLong:csample.value] forKey:HKPluginKeyValue];
-                                      [entry setValue:csample.categoryType.identifier forKey:@"catagoryType.identifier"];
-                                      [entry setValue:csample.categoryType.description forKey:@"catagoryType.description"];
+                                      [entry setValue:csample.categoryType.identifier forKey:@"categoryType.identifier"];
+                                      [entry setValue:csample.categoryType.description forKey:@"categoryType.description"];
                                       [entry setValue:csample.UUID.UUIDString forKey:HKPluginKeyUUID];
                                       [entry setValue:csample.source.name forKey:HKPluginKeySourceName];
                                       [entry setValue:csample.source.bundleIdentifier forKey:HKPluginKeySourceBundleId];
@@ -1026,8 +1026,8 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                 if ([sample isKindOfClass:[HKCategorySample class]]) {
                     HKCategorySample *csample = (HKCategorySample *)sample;
                     [entry setValue:[NSNumber numberWithLong:csample.value] forKey:HKPluginKeyValue];
-                    [entry setValue:csample.categoryType.identifier forKey:@"catagoryType.identifier"];
-                    [entry setValue:csample.categoryType.description forKey:@"catagoryType.description"];
+                    [entry setValue:csample.categoryType.identifier forKey:@"categoryType.identifier"];
+                    [entry setValue:csample.categoryType.description forKey:@"categoryType.description"];
                 } else if ([sample isKindOfClass:[HKCorrelation class]]) {
                     HKCorrelation* correlation = (HKCorrelation*)sample;
                     [entry setValue:correlation.correlationType.identifier forKey:HKPluginKeyCorrelationType];
