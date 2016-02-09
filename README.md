@@ -50,8 +50,8 @@ Using the Cordova CLI?
 cordova plugin add com.telerik.plugins.healthkit
 ```
 
-Using PGB?
+Using PhoneGap Build?
 
 ```xml
-<gap:plugin name="com.telerik.plugins.healthkit" source="npm" />
+<plugin name="com.telerik.plugins.healthkit" source="npm" />
 ```

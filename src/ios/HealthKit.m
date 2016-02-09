@@ -49,9 +49,9 @@ static NSString *const HKPluginKeyUUID = @"UUID";
     HKObjectType *type = nil;
       
     if([elem isEqual: @"HKWorkoutTypeIdentifier"]) {
+      type = [HKObjectType workoutType];
+    } else{
         type = [self getHKObjectType:elem];
-    }else{
-        type = [HKObjectType workoutType];
     }
       
     if (type == nil) {
@@ -73,9 +73,9 @@ static NSString *const HKPluginKeyUUID = @"UUID";
       HKObjectType *type = nil;
       
       if([elem isEqual: @"HKWorkoutTypeIdentifier"]) {
+        type = [HKObjectType workoutType];
+      } else{
           type = [self getHKObjectType:elem];
-      }else{
-          type = [HKObjectType workoutType];
       }
       
     if (type == nil) {
