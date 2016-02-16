@@ -438,7 +438,7 @@ static NSString *const HKPluginKeyUUID = @"UUID";
           });
         } else {
           dispatch_async(dispatch_get_main_queue(), ^{
-            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorInner.localizedDescription];
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"no data"];
             [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
           });
         }
@@ -534,7 +534,7 @@ static NSString *const HKPluginKeyUUID = @"UUID";
           });
         } else {
           dispatch_async(dispatch_get_main_queue(), ^{
-            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorInner.localizedDescription];
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"no data"];
             [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
           });
         }
