@@ -68,10 +68,10 @@ var define = function(methodName, params, fn) {
         onError(error.message);
       }
 
-      var args = options ? [options] : []
+      var args = options ? [options] : [];
       cordova.exec(callback, onError, 'HealthKit', methodName, args);
     };
-  };
+  }
 };
 
 define('available', {noArgs: true});
@@ -80,6 +80,7 @@ define('requestAuthorization');
 define('readDateOfBirth', {noArgs: true});
 define('readGender', {noArgs: true});
 define('findWorkouts');
+define('delete');
 define('readWeight');
 define('readHeight');
 define('readBloodType', {noArgs: true});

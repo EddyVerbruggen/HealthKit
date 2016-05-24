@@ -33,4 +33,6 @@
 - (void) saveCorrelation:(CDVInvokedUrlCommand*)command;
 - (void) queryCorrelationType:(CDVInvokedUrlCommand*)command;
 
+- (void) delete:(CDVInvokedUrlCommand*)command;
+
 @end

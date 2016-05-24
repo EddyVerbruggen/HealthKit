@@ -1141,6 +1141,14 @@ static NSString *const HKPluginKeyUUID = @"UUID";
   }];
 }
 
+- (void) delete:(CDVInvokedUrlCommand*)command {
+  NSMutableDictionary *args = [command.arguments objectAtIndex:0];
+
+  // TODO see the 3 methods at https://developer.apple.com/library/ios/documentation/HealthKit/Reference/HKHealthStore_Class/#//apple_ref/occ/instm/HKHealthStore/deleteObject:withCompletion:
+
+  CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+  [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+}
 
 #pragma mark - helper methods
 
