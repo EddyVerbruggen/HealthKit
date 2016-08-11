@@ -46,6 +46,8 @@
     <button onclick="readGender()">Read gender</button>
     <br/><br/>
     <button onclick="readBloodType()">Read bloodtype</button>
+    &nbsp;&nbsp;
+    <button onclick="readFitzpatrickSkinType()">Fitzp. Skin type</button>
     <br/><br/>
     <button onclick="querySampleType()">Query Sample</button>
     <br/><br/>
@@ -113,9 +115,9 @@
   function requestAuthorization() {
     window.plugins.healthkit.requestAuthorization(
         {
-          'readTypes': ['HKCharacteristicTypeIdentifierDateOfBirth',
+          readTypes: ['HKCharacteristicTypeIdentifierDateOfBirth',
             'HKCategoryTypeIdentifierSleepAnalysis', 'HKQuantityTypeIdentifierActiveEnergyBurned', 'HKQuantityTypeIdentifierHeight'],
-          'writeTypes': ['HKQuantityTypeIdentifierDietaryEnergyConsumed', 'HKQuantityTypeIdentifierDietaryFatTotal', 'HKQuantityTypeIdentifierStepCount', 'HKQuantityTypeIdentifierActiveEnergyBurned', 'HKQuantityTypeIdentifierHeight', 'HKQuantityTypeIdentifierDistanceCycling']
+          writeTypes: ['HKQuantityTypeIdentifierDietaryEnergyConsumed', 'HKQuantityTypeIdentifierDietaryFatTotal', 'HKQuantityTypeIdentifierStepCount', 'HKQuantityTypeIdentifierActiveEnergyBurned', 'HKQuantityTypeIdentifierHeight', 'HKQuantityTypeIdentifierDistanceCycling']
         },
         callback,
         callback
@@ -148,6 +150,13 @@
 
   function readBloodType() {
     window.plugins.healthkit.readBloodType(
+        callback,
+        callback
+    );
+  }
+
+  function readFitzpatrickSkinType() {
+    window.plugins.healthkit.readFitzpatrickSkinType(
         callback,
         callback
     );
@@ -228,8 +237,9 @@
         {
           'startDate': new Date(new Date().getTime() - 3 * 24 * 60 * 60 * 1000), // three days ago
           'endDate': new Date(), // now
-          'sampleType': 'HKQuantityTypeIdentifierStepCount', // anything in HealthKit/HKTypeIdentifiers.h
-          'unit': 'count' // make sure this is compatible with the sampleType
+          'sampleType': 'HKQuantityTypeIdentifierBasalBodyTemperature',
+          //'sampleType': 'HKQuantityTypeIdentifierStepCount', // anything in HealthKit/HKTypeIdentifiers.h
+          'unit': 'degF' // make sure this is compatible with the sampleType
         },
         callback,
         callback

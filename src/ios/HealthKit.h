@@ -13,6 +13,7 @@
 - (void) readGender:(CDVInvokedUrlCommand*)command;
 - (void) readBloodType:(CDVInvokedUrlCommand*)command;
 - (void) readDateOfBirth:(CDVInvokedUrlCommand*)command;
+- (void) readFitzpatrickSkinType:(CDVInvokedUrlCommand*)command;
 
 - (void) saveWeight:(CDVInvokedUrlCommand*)command;
 - (void) readWeight:(CDVInvokedUrlCommand*)command;

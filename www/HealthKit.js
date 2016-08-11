@@ -79,6 +79,7 @@ define('checkAuthStatus');
 define('requestAuthorization');
 define('readDateOfBirth', {noArgs: true});
 define('readGender', {noArgs: true});
+define('readFitzpatrickSkinType', {noArgs: true});
 define('findWorkouts');
 define('delete');
 define('readWeight');
