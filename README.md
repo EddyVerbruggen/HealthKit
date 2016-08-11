@@ -16,7 +16,7 @@
 * `checkAuthStatus`: pass in a type and get back on of undetermined | denied | authorized
 * `requestAuthorization`: ask some or all permissions up front
 * `readDateOfBirth`: formatted as yyyy-MM-dd
-* `readGender`: output = male|female|unknown
+* `readGender`: output = male|female|other|unknown
 * `readBloodType`: output = A+|A-|B+|B-|AB+|AB-|O+|O-|unknown
 * `readFitzpatrickSkinType`: output = I|II|III|IV|V|VI|unknown
 * `readWeight`: pass in unit (g=gram, kg=kilogram, oz=ounce, lb=pound, st=stone)
