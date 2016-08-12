@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
         id="com.telerik.plugins.healthkit"
-        version="0.5.0">
+        version="0.5.1">
 
   <name>HealthKit</name>
 
@@ -42,6 +42,14 @@
         <string>healthkit</string>
       </array>
     </config-file-->
+
+    <!-- Usage description of Health, mandatory since iOS 10 -->
+    <config-file target="*-Info.plist" parent="NSHealthShareUsageDescription">
+      <string/>
+    </config-file>
+    <config-file target="*-Info.plist" parent="NSHealthUpdateUsageDescription">
+      <string/>
+    </config-file>
 
     <header-file src="src/ios/WorkoutActivityConversion.h"/>
     <source-file src="src/ios/WorkoutActivityConversion.m"/>

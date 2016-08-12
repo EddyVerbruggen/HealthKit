@@ -113,11 +113,19 @@
   }
 
   function requestAuthorization() {
+    var supportedTypes = [
+      'HKQuantityTypeIdentifierHeight',
+      'HKQuantityTypeIdentifierStepCount',
+      'HKQuantityTypeIdentifierDistanceWalkingRunning',
+      'HKCategoryTypeIdentifierSleepAnalysis',
+      'HKQuantityTypeIdentifierDietaryEnergyConsumed',
+      'HKQuantityTypeIdentifierDietaryFatTotal'
+    ];
+
     window.plugins.healthkit.requestAuthorization(
         {
-          readTypes: ['HKCharacteristicTypeIdentifierDateOfBirth',
-            'HKCategoryTypeIdentifierSleepAnalysis', 'HKQuantityTypeIdentifierActiveEnergyBurned', 'HKQuantityTypeIdentifierHeight'],
-          writeTypes: ['HKQuantityTypeIdentifierDietaryEnergyConsumed', 'HKQuantityTypeIdentifierDietaryFatTotal', 'HKQuantityTypeIdentifierStepCount', 'HKQuantityTypeIdentifierActiveEnergyBurned', 'HKQuantityTypeIdentifierHeight', 'HKQuantityTypeIdentifierDistanceCycling']
+          readTypes: supportedTypes,
+          writeTypes: supportedTypes
         },
         callback,
         callback
