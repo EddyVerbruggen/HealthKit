@@ -1,4 +1,4 @@
-#import <Cordova/CDV.h>
+#import "Cordova/CDV.h"
 #import <HealthKit/HealthKit.h>
 
 @interface HealthKit :CDVPlugin
