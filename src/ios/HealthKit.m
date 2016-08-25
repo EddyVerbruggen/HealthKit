@@ -3,6 +3,8 @@
 #import "WorkoutActivityConversion.h"
 #import "Cordova/CDV.h"
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCNotLocalizedStringInspection"
 #define HKPLUGIN_DEBUG
 
 #pragma mark Property Type Constants
@@ -34,8 +36,9 @@ static NSString *const HKPluginKeyUUID              = @"UUID";
 @interface HealthKit (Internal)
 - (void)checkAuthStatusWithCallbackId:(NSString *)callbackId
                               forType:(HKObjectType *)type
-                        andCompletion:(void (^)(CDVPluginResult *result, NSString *callbackId))completion;
+                        andCompletion:(void (^)(CDVPluginResult *result, NSString *innerCallbackId))completion;
 @end
+
 
 // Internal interface helper methods
 @interface HealthKit (InternalHelpers)
@@ -1509,3 +1512,5 @@ static NSString *const HKPluginKeyUUID              = @"UUID";
 }
 
 @end
+
+#pragma clang diagnostic pop
