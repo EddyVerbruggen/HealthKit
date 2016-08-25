@@ -3,9 +3,6 @@
 
 @interface HealthKit :CDVPlugin
 
-@property (nonatomic) HKHealthStore *healthStore;
-@property (nonatomic) NSDateFormatter *dateFormatter;
-
 - (void) available:(CDVInvokedUrlCommand*)command;
 - (void) checkAuthStatus:(CDVInvokedUrlCommand*)command;
 - (void) requestAuthorization:(CDVInvokedUrlCommand*)command;
@@ -34,6 +31,6 @@
 - (void) saveCorrelation:(CDVInvokedUrlCommand*)command;
 - (void) queryCorrelationType:(CDVInvokedUrlCommand*)command;
 
-- (void) delete:(CDVInvokedUrlCommand*)command;
+- (void) deleteObject:(CDVInvokedUrlCommand*)command;
 
 @end
