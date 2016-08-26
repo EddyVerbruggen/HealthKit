@@ -643,8 +643,7 @@ static NSString *const HKPluginKeyUUID = @"UUID";
         __block HealthKit *bSelf = self;
         if (!success_requestAuth) {
             dispatch_sync(dispatch_get_main_queue(), ^{
-                CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
-                [bSelf.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+                [HealthKit triggerErrorCallbackWithMessage:error.localizedDescription command:command delegate:bSelf.commandDelegate];
             });
         } else {
             HKWorkout *workout = [HKWorkout workoutWithActivityType:activityTypeEnum
@@ -1676,7 +1675,7 @@ static NSString *const HKPluginKeyUUID = @"UUID";
         if (success) {
             dispatch_sync(dispatch_get_main_queue(), ^{
                 CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-                [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+                [bSelf.commandDelegate sendPluginResult:result callbackId:command.callbackId];
             });
         } else {
             dispatch_sync(dispatch_get_main_queue(), ^{
