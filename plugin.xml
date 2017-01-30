@@ -21,6 +21,7 @@
 
   <engines>
     <engine name="cordova" version=">=3.0.0"/>
+    <engine name="cordova-ios" version=">=4.3.0" />
   </engines>
 
   <js-module src="www/HealthKit.js" name="HealthKit">
