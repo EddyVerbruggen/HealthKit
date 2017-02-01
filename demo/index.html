@@ -53,6 +53,8 @@
     <br/><br/>
     <button onclick="querySampleTypeAggregated()">Query Sample Aggregated</button>
     <br/><br/>
+    <button onclick="deleteSamples()">Delete weight samples</button>
+    <br/><br/>
     <button onclick="saveHeight()">Save Height</button>
     &nbsp;&nbsp;
     <button onclick="readHeight()">Read Height</button>
@@ -127,8 +129,8 @@
           readTypes: supportedTypes,
           writeTypes: supportedTypes
         },
-        callback,
-        callback
+        function(){alert('ok')},
+        function(){alert('nok')}
     );
   }
 
@@ -267,6 +269,20 @@
         callback
     );
   }
+
+  // to test, set a few 'weight' samples, then run this
+  function deleteSamples() {
+    window.plugins.healthkit.deleteSamples(
+        {
+          'startDate': new Date(new Date().getTime() - 60 * 60 * 1000), // an hour ago
+          'endDate': new Date(), // now
+          'sampleType': 'HKQuantityTypeIdentifierBodyMass'
+        },
+        callback,
+        callback
+    );
+  }
+
 
   // this is work in progress
   function monitorSampleType() {

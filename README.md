@@ -32,6 +32,7 @@
 * `saveQuantitySample`
 * `saveCorrelation`
 * `queryCorrelationType`
+* `deleteSamples`
 
 ### Resources
 

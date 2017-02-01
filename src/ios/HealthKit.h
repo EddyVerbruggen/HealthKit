@@ -144,11 +144,10 @@
 - (void) queryCorrelationType:(CDVInvokedUrlCommand*)command;
 
 /**
- * Delete a specified object from teh HealthKit store
- * @TODO implement me
+ * Delete matching samples from the HealthKit store
  *
  * @param command *CDVInvokedUrlCommand
  */
-- (void) deleteObject:(CDVInvokedUrlCommand*)command;
+- (void) deleteSamples:(CDVInvokedUrlCommand*)command;
 
 @end

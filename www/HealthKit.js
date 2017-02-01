@@ -71,7 +71,7 @@ var define = function(methodName, params, fn) {
       var args = options ? [options] : [];
       cordova.exec(callback, onError, 'HealthKit', methodName, args);
     };
-  }
+  };
 };
 
 define('available', {noArgs: true});
@@ -111,6 +111,8 @@ define('monitorSampleType', {required: 'sampleType'});
 define('querySampleType', {required: 'sampleType'}, hasValidDates);
 
 define('querySampleTypeAggregated', {required: 'sampleType'}, hasValidDates);
+
+define('deleteSamples', {required: 'sampleType'}, hasValidDates);
 
 define('queryCorrelationType', {required: 'correlationType'}, hasValidDates);
 define('saveQuantitySample', {required: 'sampleType'}, hasValidDates);
