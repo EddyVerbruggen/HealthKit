@@ -51,6 +51,14 @@
       <string/>
     </config-file>
 
+    <config-file target="*/Entitlements-Debug.plist" parent="com.apple.developer.healthkit">
+      <true/>
+    </config-file>
+
+    <config-file target="*/Entitlements-Release.plist" parent="com.apple.developer.healthkit">
+      <true/>
+    </config-file>
+
     <header-file src="src/ios/WorkoutActivityConversion.h"/>
     <source-file src="src/ios/WorkoutActivityConversion.m"/>
     <header-file src="src/ios/HKHealthStore+AAPLExtensions.h"/>
