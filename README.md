@@ -41,7 +41,7 @@
 * For functions that require the `unit` attribute, you can find the [comprehensive list of possible units from the Apple Developers documentation](https://developer.apple.com/library/ios/documentation/HealthKit/Reference/HKUnit_Class/index.html#//apple_ref/doc/uid/TP40014727-CH1-SW2).
 
 ### Tips
-* Make sure your app id has the 'HealthKit' entitlement when this plugin is installed (see iOS dev center).
+* Make sure your app id has the 'HealthKit' entitlement when this plugin is installed. This is added automatically to your app if you use cordova-ios 4.3.0 or higher.
 * Also, make sure your app and AppStore description complies with these Apple review guidelines: https://developer.apple.com/app-store/review/guidelines/#healthkit
 
 ### Installation
