@@ -1580,7 +1580,7 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                                     HKPluginKeySampleType: quantitySample.sampleType.identifier,
                                     HKPluginKeyValue: @([quantitySample.quantity doubleValueForUnit:unit]),
                                     HKPluginKeyUnit: unit.unitString,
-                                    HKPluginKeyMetadata: ((quantitySample.metadata != nil) ? quantitySample.metadata : @{}),
+                                    HKPluginKeyMetadata: (quantitySample.metadata == nil || ![NSJSONSerialization isValidJSONObject:quantitySample.metadata]) ? @{} : quantitySample.metadata,
                                     HKPluginKeyUUID: quantitySample.UUID.UUIDString
                             }
                             ];
