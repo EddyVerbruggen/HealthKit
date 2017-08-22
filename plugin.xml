@@ -44,11 +44,13 @@
     </config-file-->
 
     <!-- Usage description of Health, mandatory since iOS 10 -->
+    <preference name="HEALTH_READ_PERMISSION" default=" " />
+    <preference name="HEALTH_WRITE_PERMISSION" default=" " />
     <config-file target="*-Info.plist" parent="NSHealthShareUsageDescription">
-      <string/>
+      <string>$HEALTH_READ_PERMISSION</string>
     </config-file>
     <config-file target="*-Info.plist" parent="NSHealthUpdateUsageDescription">
-      <string/>
+      <string>$HEALTH_WRITE_PERMISSION</string>
     </config-file>
 
     <config-file target="*/Entitlements-Debug.plist" parent="com.apple.developer.healthkit">
