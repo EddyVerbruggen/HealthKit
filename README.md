@@ -49,11 +49,21 @@
 Using the Cordova CLI?
 
 ```
-cordova plugin add com.telerik.plugins.healthkit
+cordova plugin add com.telerik.plugins.healthkit --variable HEALTH_READ_PERMISSION='App needs read access' --variable HEALTH_WRITE_PERMISSION='App needs write access'
 ```
+`HEALTH_READ_PERMISSION` and `HEALTH_WRITE_PERMISSION` are shown when your app asks for access to data in HealthKit.
 
 Using PhoneGap Build?
 
 ```xml
 <plugin name="com.telerik.plugins.healthkit" source="npm" />
+
+<!-- Read access -->
+<config-file platform="ios" parent="NSHealthShareUsageDescription">
+  <string>App needs read access</string>
+</config-file>
+<!-- Write access -->
+<config-file platform="ios" parent="NSHealthUpdateUsageDescription">
+  <string>App needs write access</string>
+</config-file>
 ```
