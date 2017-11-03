@@ -228,6 +228,15 @@ static NSString *const HKPluginKeyUUID = @"UUID";
     if ([elem isEqualToString:@"workoutType"]) {
         return [HKObjectType workoutType];
     }
+    
+    if (@available(iOS 11.0, *)) {
+        type = [HKObjectType seriesTypeForIdentifier:elem];
+        if (type != nil) {
+            return type;
+        } else {
+            // Fallback on earlier versions
+        }
+    }
 
     // leave this here for if/when apple adds other sample types
     return type;
