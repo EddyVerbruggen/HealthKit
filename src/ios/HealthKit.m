@@ -185,6 +185,13 @@ static NSString *const HKPluginKeyUUID = @"UUID";
         return type;
     }
 
+    if (@available(iOS 12.0, *)) {
+      type = [HKObjectType clinicalTypeForIdentifier:elem];
+      if (type != nil) {
+        return type;
+      }
+    }
+
     // @TODO | The fall through here is inefficient.
     // @TODO | It needs to be refactored so the same HK method isnt called twice
     return [HealthKit getHKSampleType:elem];
