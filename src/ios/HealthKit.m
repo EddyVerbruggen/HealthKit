@@ -245,6 +245,13 @@ static NSString *const HKPluginKeyUUID = @"UUID";
         }
     }
 
+    if (@available(iOS 12.0, *)) {
+      type = [HKObjectType clinicalTypeForIdentifier:elem];
+      if (type != nil) {
+        return type;
+      }
+    }
+
     // leave this here for if/when apple adds other sample types
     return type;
 
