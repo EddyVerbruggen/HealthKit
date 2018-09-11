@@ -1366,6 +1366,33 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                                                                               HKWorkout *wsample = (HKWorkout *) sample;
                                                                               [entry setValue:@(wsample.duration) forKey:@"duration"];
 
+                                                                          } else {
+
+                                                                            if (@available(iOS 12.0, *)) {
+                                                                            
+                                                                                if ([sample isKindOfClass:[HKClinicalRecord class]]) {
+                                                                                    HKClinicalRecord *clinicalRecord = (HKClinicalRecord *) sample;
+                                                                                    NSError *err = nil;
+                                                                                    NSDictionary *fhirData = [NSJSONSerialization JSONObjectWithData:clinicalRecord.FHIRResource.data options:NSJSONReadingMutableContainers error:&err];
+                                                                                    
+                                                                                    if (err != nil) {
+                                                                                        dispatch_sync(dispatch_get_main_queue(), ^{
+                                                                                            [HealthKit triggerErrorCallbackWithMessage:err.localizedDescription command:command delegate:bSelf.commandDelegate];
+                                                                                        });
+                                                                                        return;
+                                                                                    } else {
+                                                                                        NSDictionary *fhirResource = @{
+                                                                                                        @"identifier": clinicalRecord.FHIRResource.identifier,
+                                                                                                        @"sourceURL": clinicalRecord.FHIRResource.sourceURL.absoluteString,
+                                                                                                        @"displayName": clinicalRecord.displayName,
+                                                                                                        @"data": fhirData
+                                                                                                    };
+                                                                                        entry[@"FHIRResource"] = fhirResource;
+                                                                                    }
+                                                                                }
+                                                                            
+                                                                            }
+
                                                                           }
 
                                                                           [finalResults addObject:entry];
