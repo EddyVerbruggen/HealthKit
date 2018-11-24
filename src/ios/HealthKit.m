@@ -476,58 +476,55 @@ static NSString *const HKPluginKeyUUID = @"UUID";
  */
 
 + (void)returnClinicalResultsFromQuery: (NSArray *)results  command: (CDVInvokedUrlCommand *) command delegate: (id<CDVCommandDelegate>) delegate {
-  if (@available(iOS 12.0, *)) {
-    NSMutableArray *finalResults = [[NSMutableArray alloc] initWithCapacity:results.count];
-    
-    for (HKSample *sample in results) {
+  @autoreleasepool {
+    if (@available(iOS 12.0, *)) {
+      NSMutableArray *finalResults = [[NSMutableArray alloc] initWithCapacity:results.count];
       
-      NSDate *startSample = sample.startDate;
-      NSDate *endSample = sample.endDate;
-      NSMutableDictionary *entry = [NSMutableDictionary dictionary];
-      
-      // common indices
-      entry[HKPluginKeyStartDate] =[HealthKit stringFromDate:startSample];
-      entry[HKPluginKeyEndDate] = [HealthKit stringFromDate:endSample];
-      entry[HKPluginKeyUUID] = sample.UUID.UUIDString;
-      
-      entry[HKPluginKeySourceName] = sample.sourceRevision.source.name;
-      entry[HKPluginKeySourceBundleId] = sample.sourceRevision.source.bundleIdentifier;
-      
-      if (sample.metadata == nil || ![NSJSONSerialization isValidJSONObject:sample.metadata]) {
-        entry[HKPluginKeyMetadata] = @{};
-      } else {
-        entry[HKPluginKeyMetadata] = sample.metadata;
-      }
-      
-      if ([sample isKindOfClass:[HKClinicalRecord class]]) {
-        HKClinicalRecord *clinicalRecord = (HKClinicalRecord *) sample;
-        NSError *err = nil;
-        NSDictionary *fhirData = [NSJSONSerialization JSONObjectWithData:clinicalRecord.FHIRResource.data options:NSJSONReadingMutableContainers error:&err];
+      for (HKSample *sample in results) {
         
-        if (err != nil) {
-          dispatch_sync(dispatch_get_main_queue(), ^{
-            [HealthKit triggerErrorCallbackWithMessage:err.localizedDescription command:command delegate:delegate];
-          });
-          return;
+        NSDate *startSample = sample.startDate;
+        NSDate *endSample = sample.endDate;
+        NSMutableDictionary *entry = [NSMutableDictionary dictionary];
+        
+        // common indices
+        entry[HKPluginKeyStartDate] =[HealthKit stringFromDate:startSample];
+        entry[HKPluginKeyEndDate] = [HealthKit stringFromDate:endSample];
+        entry[HKPluginKeyUUID] = sample.UUID.UUIDString;
+        
+        entry[HKPluginKeySourceName] = sample.sourceRevision.source.name;
+        entry[HKPluginKeySourceBundleId] = sample.sourceRevision.source.bundleIdentifier;
+        
+        if (sample.metadata == nil || ![NSJSONSerialization isValidJSONObject:sample.metadata]) {
+          entry[HKPluginKeyMetadata] = @{};
         } else {
-          NSDictionary *fhirResource = @{
-                                         @"identifier": clinicalRecord.FHIRResource.identifier,
-                                         @"sourceURL": clinicalRecord.FHIRResource.sourceURL.absoluteString,
-                                         @"displayName": clinicalRecord.displayName,
-                                         @"data": fhirData
-                                         };
-          entry[@"FHIRResource"] = fhirResource;
+          entry[HKPluginKeyMetadata] = sample.metadata;
         }
+        
+        if ([sample isKindOfClass:[HKClinicalRecord class]]) {
+          HKClinicalRecord *clinicalRecord = (HKClinicalRecord *) sample;
+          NSError *err = nil;
+          NSDictionary *fhirData = [NSJSONSerialization JSONObjectWithData:clinicalRecord.FHIRResource.data options:NSJSONReadingMutableContainers error:&err];
+          
+          if (err != nil) {
+            [HealthKit triggerErrorCallbackWithMessage:err.localizedDescription command:command delegate:delegate];
+            return;
+          } else {
+            NSDictionary *fhirResource = @{
+                                           @"identifier": clinicalRecord.FHIRResource.identifier,
+                                           @"sourceURL": clinicalRecord.FHIRResource.sourceURL.absoluteString,
+                                           @"displayName": clinicalRecord.displayName,
+                                           @"data": fhirData
+                                           };
+            entry[@"FHIRResource"] = fhirResource;
+          }
+        }
+        
+        [finalResults addObject:entry];
       }
       
-      [finalResults addObject:entry];
-    }
-    
-    dispatch_sync(dispatch_get_main_queue(), ^{
       CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:finalResults];
       [delegate sendPluginResult:result callbackId:command.callbackId];
-    });
-    
+    }
   }
 }
 
@@ -849,8 +846,7 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                         if ([workout respondsToSelector:@selector(sourceRevision)]) {
                             source = [[workout valueForKey:@"sourceRevision"] valueForKey:@"source"];
                         } else {
-                            //@TODO Update deprecated API call
-                            source = workout.source;
+                            source = workout.sourceRevision.source;
                         }
 
                         // TODO: use a float value, or switch to metric
@@ -1429,9 +1425,8 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                                                                           entry[HKPluginKeyEndDate] = [HealthKit stringFromDate:endSample];
                                                                           entry[HKPluginKeyUUID] = sample.UUID.UUIDString;
 
-                                                                          //@TODO Update deprecated API calls
-                                                                          entry[HKPluginKeySourceName] = sample.source.name;
-                                                                          entry[HKPluginKeySourceBundleId] = sample.source.bundleIdentifier;
+                                                                          entry[HKPluginKeySourceName] = sample.sourceRevision.source.name;
+                                                                          entry[HKPluginKeySourceBundleId] = sample.sourceRevision.source.bundleIdentifier;
 
                                                                           if (sample.metadata == nil || ![NSJSONSerialization isValidJSONObject:sample.metadata]) {
                                                                               entry[HKPluginKeyMetadata] = @{};
