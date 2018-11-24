@@ -1563,6 +1563,114 @@ static NSString *const HKPluginKeyUUID = @"UUID";
 }
 
 /**
+ * Search for a specific FHIR resource type
+ *
+ * @param command *CDVInvokedUrlCommand
+ */
+- (void)queryForClinicalRecordsWithFHIRResourceType:(CDVInvokedUrlCommand *)command {
+  if (@available(iOS 12.0, *)) {
+    NSDictionary *args = command.arguments[0];
+    
+    NSString *sampleTypeString = args[HKPluginKeySampleType];
+    HKSampleType *sampleType = [HealthKit getHKSampleType:sampleTypeString];
+    NSString *fhirResourceTypeString = args[@"fhirResourceType"];
+    HKFHIRResourceType fhirResourceType = nil;
+    
+    if (sampleType == nil) {
+      [HealthKit triggerErrorCallbackWithMessage:@"sampleType was invalid" command:command delegate:self.commandDelegate];
+      return;
+    }
+    
+    NSDictionary *fhirResourceTypeMap = @{
+                                          @"HKFHIRResourceTypeAllergyIntolerance": HKFHIRResourceTypeAllergyIntolerance,
+                                          @"HKFHIRResourceTypeCondition": HKFHIRResourceTypeCondition,
+                                          @"HKFHIRResourceTypeImmunization": HKFHIRResourceTypeImmunization,
+                                          @"HKFHIRResourceTypeMedicationDispense": HKFHIRResourceTypeMedicationDispense,
+                                          @"HKFHIRResourceTypeMedicationOrder": HKFHIRResourceTypeMedicationOrder,
+                                          @"HKFHIRResourceTypeMedicationStatement": HKFHIRResourceTypeMedicationStatement,
+                                          @"HKFHIRResourceTypeObservation": HKFHIRResourceTypeObservation,
+                                          @"HKFHIRResourceTypeProcedure": HKFHIRResourceTypeProcedure
+                                          };
+    
+    fhirResourceType = fhirResourceTypeMap[fhirResourceTypeString];
+    
+    if (fhirResourceType == nil) {
+      [HealthKit triggerErrorCallbackWithMessage:@"fhirResourceType was invalid" command:command delegate:self.commandDelegate];
+    }
+    
+    NSPredicate *predicate = [HKQuery predicateForClinicalRecordsWithFHIRResourceType:fhirResourceType];
+    
+    HKSampleQuery *query = [[HKSampleQuery alloc] initWithSampleType:sampleType
+                                                           predicate:predicate
+                                                               limit:HKObjectQueryNoLimit
+                                                     sortDescriptors:nil
+                                                      resultsHandler:^(HKSampleQuery * _Nonnull query, NSArray<__kindof HKSample *> * _Nullable results, NSError * _Nullable error) {
+                                                        if (error != nil) {
+                                                          dispatch_sync(dispatch_get_main_queue(), ^{
+                                                            [HealthKit triggerErrorCallbackWithMessage:error.localizedDescription command:command delegate:self.commandDelegate];
+                                                          });
+                                                        } else {
+                                                          NSMutableArray *finalResults = [[NSMutableArray alloc] initWithCapacity:results.count];
+                                                          
+                                                          for (HKSample *sample in results) {
+                                                            
+                                                            NSDate *startSample = sample.startDate;
+                                                            NSDate *endSample = sample.endDate;
+                                                            NSMutableDictionary *entry = [NSMutableDictionary dictionary];
+                                                            
+                                                            // common indices
+                                                            entry[HKPluginKeyStartDate] =[HealthKit stringFromDate:startSample];
+                                                            entry[HKPluginKeyEndDate] = [HealthKit stringFromDate:endSample];
+                                                            entry[HKPluginKeyUUID] = sample.UUID.UUIDString;
+                                                            
+                                                            entry[HKPluginKeySourceName] = sample.sourceRevision.source.name;
+                                                            entry[HKPluginKeySourceBundleId] = sample.sourceRevision.source.bundleIdentifier;
+                                                            
+                                                            if (sample.metadata == nil || ![NSJSONSerialization isValidJSONObject:sample.metadata]) {
+                                                              entry[HKPluginKeyMetadata] = @{};
+                                                            } else {
+                                                              entry[HKPluginKeyMetadata] = sample.metadata;
+                                                            }
+                                                            
+                                                            if ([sample isKindOfClass:[HKClinicalRecord class]]) {
+                                                              HKClinicalRecord *clinicalRecord = (HKClinicalRecord *) sample;
+                                                              NSError *err = nil;
+                                                              NSDictionary *fhirData = [NSJSONSerialization JSONObjectWithData:clinicalRecord.FHIRResource.data options:NSJSONReadingMutableContainers error:&err];
+                                                              
+                                                              if (err != nil) {
+                                                                dispatch_sync(dispatch_get_main_queue(), ^{
+                                                                  [HealthKit triggerErrorCallbackWithMessage:err.localizedDescription command:command delegate:self.commandDelegate];
+                                                                });
+                                                                return;
+                                                              } else {
+                                                                NSDictionary *fhirResource = @{
+                                                                                               @"identifier": clinicalRecord.FHIRResource.identifier,
+                                                                                               @"sourceURL": clinicalRecord.FHIRResource.sourceURL.absoluteString,
+                                                                                               @"displayName": clinicalRecord.displayName,
+                                                                                               @"data": fhirData
+                                                                                               };
+                                                                entry[@"FHIRResource"] = fhirResource;
+                                                              }
+                                                            }
+                                                            
+                                                            [finalResults addObject:entry];
+                                                          }
+                                                          
+                                                          dispatch_sync(dispatch_get_main_queue(), ^{
+                                                            CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:finalResults];
+                                                            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+                                                          });
+                                                        }
+                                                      }];
+    
+    [[HealthKit sharedHealthStore] executeQuery:query];
+  } else {
+    [HealthKit triggerErrorCallbackWithMessage:@"queryForClinicalRecordsWithFHIRResourceType requires ios 12 or higher" command:command delegate:self.commandDelegate];
+  }
+
+}
+
+/**
  * Query a specified correlation type
  *
  * @param command *CDVInvokedUrlCommand
