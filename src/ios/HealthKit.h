@@ -123,6 +123,20 @@
 - (void) querySampleTypeAggregated:(CDVInvokedUrlCommand*)command;
 
 /**
+ * Search for a particular FHIR record
+ *
+ * @param command *CDVInvokedUrlCommand
+ */
+- (void)queryForClinicalRecordsFromSource:(CDVInvokedUrlCommand *)command;
+
+/**
+ * Search for a specific FHIR resource type
+ *
+ * @param command *CDVInvokedUrlCommand
+ */
+- (void)queryForClinicalRecordsWithFHIRResourceType:(CDVInvokedUrlCommand *)command;
+
+/**
  * Save quantity sample data
  *
  * @param command *CDVInvokedUrlCommand

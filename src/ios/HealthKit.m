@@ -57,6 +57,8 @@ static NSString *const HKPluginKeyUUID = @"UUID";
 
 + (HKSampleType *)getHKSampleType:(NSString *)elem;
 
++ (HKFHIRResourceType)getFHIRResourceType:(NSString *)elem API_AVAILABLE(ios(12.0));
+
 - (HKQuantitySample *)loadHKQuantitySampleFromInputDictionary:(NSDictionary *)inputDictionary error:(NSError **)error;
 
 - (HKCorrelation *)loadHKCorrelationFromInputDictionary:(NSDictionary *)inputDictionary error:(NSError **)error;
@@ -66,6 +68,8 @@ static NSString *const HKPluginKeyUUID = @"UUID";
 - (HKCorrelation *)getHKCorrelationWithStartDate:(NSDate *)startDate endDate:(NSDate *)endDate correlationTypeString:(NSString *)correlationTypeString objects:(NSSet *)objects metadata:(NSDictionary *)metadata error:(NSError **)error;
 
 + (void)triggerErrorCallbackWithMessage: (NSString *) message command: (CDVInvokedUrlCommand *) command delegate: (id<CDVCommandDelegate>) delegate;
+
++ (void)returnClinicalResultsFromQuery: (NSArray *)results  command: (CDVInvokedUrlCommand *) command delegate: (id<CDVCommandDelegate>) delegate;
 @end
 
 /**
@@ -195,6 +199,34 @@ static NSString *const HKPluginKeyUUID = @"UUID";
     // @TODO | The fall through here is inefficient.
     // @TODO | It needs to be refactored so the same HK method isnt called twice
     return [HealthKit getHKSampleType:elem];
+}
+
+/**
+ * Get a FHIR Resource Type constant by name
+ *
+ * @param elem  *NSString
+ * @return      *HKFHIRResourceType
+ */
++ (HKFHIRResourceType)getFHIRResourceType:(NSString *)elem  API_AVAILABLE(ios(12.0)) {
+  if (@available(iOS 12.0, *)) {
+    HKFHIRResourceType type = nil;
+    NSDictionary *fhirResourceTypeMap = @{
+                                          @"HKFHIRResourceTypeAllergyIntolerance": HKFHIRResourceTypeAllergyIntolerance,
+                                          @"HKFHIRResourceTypeCondition": HKFHIRResourceTypeCondition,
+                                          @"HKFHIRResourceTypeImmunization": HKFHIRResourceTypeImmunization,
+                                          @"HKFHIRResourceTypeMedicationDispense": HKFHIRResourceTypeMedicationDispense,
+                                          @"HKFHIRResourceTypeMedicationOrder": HKFHIRResourceTypeMedicationOrder,
+                                          @"HKFHIRResourceTypeMedicationStatement": HKFHIRResourceTypeMedicationStatement,
+                                          @"HKFHIRResourceTypeObservation": HKFHIRResourceTypeObservation,
+                                          @"HKFHIRResourceTypeProcedure": HKFHIRResourceTypeProcedure
+                                          };
+    
+    type = fhirResourceTypeMap[elem];
+    
+    return type;
+  }
+  
+  return nil;
 }
 
 /**
@@ -433,6 +465,70 @@ static NSString *const HKPluginKeyUUID = @"UUID";
         CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:message];
         [delegate sendPluginResult:result callbackId:command.callbackId];
     }
+}
+
+/**
+ * Generic output for clinical results
+ *
+ * @param message   *NSString
+ * @param command   *CDVInvokedUrlCommand
+ * @param delegate  id<CDVCommandDelegate>
+ */
+
++ (void)returnClinicalResultsFromQuery: (NSArray *)results  command: (CDVInvokedUrlCommand *) command delegate: (id<CDVCommandDelegate>) delegate {
+  if (@available(iOS 12.0, *)) {
+    NSMutableArray *finalResults = [[NSMutableArray alloc] initWithCapacity:results.count];
+    
+    for (HKSample *sample in results) {
+      
+      NSDate *startSample = sample.startDate;
+      NSDate *endSample = sample.endDate;
+      NSMutableDictionary *entry = [NSMutableDictionary dictionary];
+      
+      // common indices
+      entry[HKPluginKeyStartDate] =[HealthKit stringFromDate:startSample];
+      entry[HKPluginKeyEndDate] = [HealthKit stringFromDate:endSample];
+      entry[HKPluginKeyUUID] = sample.UUID.UUIDString;
+      
+      entry[HKPluginKeySourceName] = sample.sourceRevision.source.name;
+      entry[HKPluginKeySourceBundleId] = sample.sourceRevision.source.bundleIdentifier;
+      
+      if (sample.metadata == nil || ![NSJSONSerialization isValidJSONObject:sample.metadata]) {
+        entry[HKPluginKeyMetadata] = @{};
+      } else {
+        entry[HKPluginKeyMetadata] = sample.metadata;
+      }
+      
+      if ([sample isKindOfClass:[HKClinicalRecord class]]) {
+        HKClinicalRecord *clinicalRecord = (HKClinicalRecord *) sample;
+        NSError *err = nil;
+        NSDictionary *fhirData = [NSJSONSerialization JSONObjectWithData:clinicalRecord.FHIRResource.data options:NSJSONReadingMutableContainers error:&err];
+        
+        if (err != nil) {
+          dispatch_sync(dispatch_get_main_queue(), ^{
+            [HealthKit triggerErrorCallbackWithMessage:err.localizedDescription command:command delegate:delegate];
+          });
+          return;
+        } else {
+          NSDictionary *fhirResource = @{
+                                         @"identifier": clinicalRecord.FHIRResource.identifier,
+                                         @"sourceURL": clinicalRecord.FHIRResource.sourceURL.absoluteString,
+                                         @"displayName": clinicalRecord.displayName,
+                                         @"data": fhirData
+                                         };
+          entry[@"FHIRResource"] = fhirResource;
+        }
+      }
+      
+      [finalResults addObject:entry];
+    }
+    
+    dispatch_sync(dispatch_get_main_queue(), ^{
+      CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:finalResults];
+      [delegate sendPluginResult:result callbackId:command.callbackId];
+    });
+    
+  }
 }
 
 @end
@@ -1563,6 +1659,81 @@ static NSString *const HKPluginKeyUUID = @"UUID";
 }
 
 /**
+ * Search for a particular FHIR record
+ *
+ * @param command *CDVInvokedUrlCommand
+ */
+- (void)queryForClinicalRecordsFromSource:(CDVInvokedUrlCommand *)command {
+  if (@available(iOS 12.0, *)) {
+    NSDictionary *args = command.arguments[0];
+    
+    NSString *sampleTypeString = args[HKPluginKeySampleType];
+    HKSampleType *sampleType = [HealthKit getHKSampleType:sampleTypeString];
+    NSString *fhirResourceTypeString = args[@"fhirResourceType"];
+    HKFHIRResourceType fhirResourceType = [HealthKit getFHIRResourceType:fhirResourceTypeString];
+    NSString *sourceName = [args valueForKeyPath:@"source.name"];
+    NSString *bundleIdentifier = [args valueForKeyPath:@"source.bundleIdentifier"];
+    NSString *identifier = args[@"identifier"];
+    
+    if (sampleType == nil) {
+      [HealthKit triggerErrorCallbackWithMessage:@"sampleType was invalid" command:command delegate:self.commandDelegate];
+      return;
+    }
+    
+    if (fhirResourceType == nil) {
+      [HealthKit triggerErrorCallbackWithMessage:@"fhirResourceType was invalid" command:command delegate:self.commandDelegate];
+    }
+    
+    HKSourceQuery *sourceQuery = [[HKSourceQuery alloc] initWithSampleType:sampleType
+                                                           samplePredicate:nil
+                                                         completionHandler:^(HKSourceQuery * _Nonnull query, NSSet<HKSource *> * _Nullable sources, NSError * _Nullable error) {
+                                                           if (error) {
+                                                             [HealthKit triggerErrorCallbackWithMessage:error.localizedDescription command:command delegate:self.commandDelegate];
+                                                             return;
+                                                           }
+                                                           
+                                                           HKSource *fromSource = nil;
+                                                           
+                                                           for (HKSource *source in sources) {
+                                                             if ([source.name isEqualToString:sourceName] && [source.bundleIdentifier isEqualToString:bundleIdentifier]) {
+                                                               fromSource = source;
+                                                               break;
+                                                             }
+                                                           }
+                                                           
+                                                           if (fromSource == nil) {
+                                                             [HealthKit triggerErrorCallbackWithMessage:@"Unable to obtain source by name and bundleIdentifier" command:command delegate:self.commandDelegate];
+                                                             return;
+                                                           }
+                                                           
+                                                           NSPredicate *predicate = [HKQuery predicateForClinicalRecordsFromSource:fromSource FHIRResourceType:fhirResourceType identifier:identifier];
+                                                           
+                                                           HKSampleQuery *sampleQuery = [[HKSampleQuery alloc] initWithSampleType:sampleType
+                                                                                                                  predicate:predicate
+                                                                                                                      limit:HKObjectQueryNoLimit
+                                                                                                            sortDescriptors:nil
+                                                                                                             resultsHandler:^(HKSampleQuery * _Nonnull query, NSArray<__kindof HKSample *> * _Nullable results, NSError * _Nullable error) {
+                                                                                                               if (error != nil) {
+                                                                                                                 dispatch_sync(dispatch_get_main_queue(), ^{
+                                                                                                                   [HealthKit triggerErrorCallbackWithMessage:error.localizedDescription command:command delegate:self.commandDelegate];
+                                                                                                                 });
+                                                                                                               } else {
+                                                                                                                 dispatch_sync(dispatch_get_main_queue(), ^{
+                                                                                                                   [HealthKit returnClinicalResultsFromQuery:results command:command delegate:self.commandDelegate];
+                                                                                                                 });
+                                                                                                               }
+                                                                                                             }];
+                                                           
+                                                           [[HealthKit sharedHealthStore] executeQuery:sampleQuery];
+                                                         }];
+    
+    [[HealthKit sharedHealthStore] executeQuery:sourceQuery];
+  } else {
+    [HealthKit triggerErrorCallbackWithMessage:@"queryForClinicalRecordsFromSource requires ios 12 or higher" command:command delegate:self.commandDelegate];
+  }
+}
+
+/**
  * Search for a specific FHIR resource type
  *
  * @param command *CDVInvokedUrlCommand
@@ -1574,25 +1745,12 @@ static NSString *const HKPluginKeyUUID = @"UUID";
     NSString *sampleTypeString = args[HKPluginKeySampleType];
     HKSampleType *sampleType = [HealthKit getHKSampleType:sampleTypeString];
     NSString *fhirResourceTypeString = args[@"fhirResourceType"];
-    HKFHIRResourceType fhirResourceType = nil;
+    HKFHIRResourceType fhirResourceType = [HealthKit getFHIRResourceType:fhirResourceTypeString];
     
     if (sampleType == nil) {
       [HealthKit triggerErrorCallbackWithMessage:@"sampleType was invalid" command:command delegate:self.commandDelegate];
       return;
     }
-    
-    NSDictionary *fhirResourceTypeMap = @{
-                                          @"HKFHIRResourceTypeAllergyIntolerance": HKFHIRResourceTypeAllergyIntolerance,
-                                          @"HKFHIRResourceTypeCondition": HKFHIRResourceTypeCondition,
-                                          @"HKFHIRResourceTypeImmunization": HKFHIRResourceTypeImmunization,
-                                          @"HKFHIRResourceTypeMedicationDispense": HKFHIRResourceTypeMedicationDispense,
-                                          @"HKFHIRResourceTypeMedicationOrder": HKFHIRResourceTypeMedicationOrder,
-                                          @"HKFHIRResourceTypeMedicationStatement": HKFHIRResourceTypeMedicationStatement,
-                                          @"HKFHIRResourceTypeObservation": HKFHIRResourceTypeObservation,
-                                          @"HKFHIRResourceTypeProcedure": HKFHIRResourceTypeProcedure
-                                          };
-    
-    fhirResourceType = fhirResourceTypeMap[fhirResourceTypeString];
     
     if (fhirResourceType == nil) {
       [HealthKit triggerErrorCallbackWithMessage:@"fhirResourceType was invalid" command:command delegate:self.commandDelegate];
@@ -1610,55 +1768,8 @@ static NSString *const HKPluginKeyUUID = @"UUID";
                                                             [HealthKit triggerErrorCallbackWithMessage:error.localizedDescription command:command delegate:self.commandDelegate];
                                                           });
                                                         } else {
-                                                          NSMutableArray *finalResults = [[NSMutableArray alloc] initWithCapacity:results.count];
-                                                          
-                                                          for (HKSample *sample in results) {
-                                                            
-                                                            NSDate *startSample = sample.startDate;
-                                                            NSDate *endSample = sample.endDate;
-                                                            NSMutableDictionary *entry = [NSMutableDictionary dictionary];
-                                                            
-                                                            // common indices
-                                                            entry[HKPluginKeyStartDate] =[HealthKit stringFromDate:startSample];
-                                                            entry[HKPluginKeyEndDate] = [HealthKit stringFromDate:endSample];
-                                                            entry[HKPluginKeyUUID] = sample.UUID.UUIDString;
-                                                            
-                                                            entry[HKPluginKeySourceName] = sample.sourceRevision.source.name;
-                                                            entry[HKPluginKeySourceBundleId] = sample.sourceRevision.source.bundleIdentifier;
-                                                            
-                                                            if (sample.metadata == nil || ![NSJSONSerialization isValidJSONObject:sample.metadata]) {
-                                                              entry[HKPluginKeyMetadata] = @{};
-                                                            } else {
-                                                              entry[HKPluginKeyMetadata] = sample.metadata;
-                                                            }
-                                                            
-                                                            if ([sample isKindOfClass:[HKClinicalRecord class]]) {
-                                                              HKClinicalRecord *clinicalRecord = (HKClinicalRecord *) sample;
-                                                              NSError *err = nil;
-                                                              NSDictionary *fhirData = [NSJSONSerialization JSONObjectWithData:clinicalRecord.FHIRResource.data options:NSJSONReadingMutableContainers error:&err];
-                                                              
-                                                              if (err != nil) {
-                                                                dispatch_sync(dispatch_get_main_queue(), ^{
-                                                                  [HealthKit triggerErrorCallbackWithMessage:err.localizedDescription command:command delegate:self.commandDelegate];
-                                                                });
-                                                                return;
-                                                              } else {
-                                                                NSDictionary *fhirResource = @{
-                                                                                               @"identifier": clinicalRecord.FHIRResource.identifier,
-                                                                                               @"sourceURL": clinicalRecord.FHIRResource.sourceURL.absoluteString,
-                                                                                               @"displayName": clinicalRecord.displayName,
-                                                                                               @"data": fhirData
-                                                                                               };
-                                                                entry[@"FHIRResource"] = fhirResource;
-                                                              }
-                                                            }
-                                                            
-                                                            [finalResults addObject:entry];
-                                                          }
-                                                          
                                                           dispatch_sync(dispatch_get_main_queue(), ^{
-                                                            CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:finalResults];
-                                                            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+                                                            [HealthKit returnClinicalResultsFromQuery:results command:command delegate:self.commandDelegate];
                                                           });
                                                         }
                                                       }];
@@ -1667,7 +1778,6 @@ static NSString *const HKPluginKeyUUID = @"UUID";
   } else {
     [HealthKit triggerErrorCallbackWithMessage:@"queryForClinicalRecordsWithFHIRResourceType requires ios 12 or higher" command:command delegate:self.commandDelegate];
   }
-
 }
 
 /**
