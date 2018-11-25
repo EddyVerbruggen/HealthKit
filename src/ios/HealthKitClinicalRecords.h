@@ -4,6 +4,11 @@
 //  Created by Ross Martin
 //
 
+#ifndef HealthKitClinicalRecords_h
+#define HealthKitClinicalRecords_h
+
+#endif /* HealthKitClinicalRecords_h */
+
 
 @interface HealthKitClinicalRecords : NSObject
 

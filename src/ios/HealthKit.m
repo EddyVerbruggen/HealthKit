@@ -1,7 +1,10 @@
 #import "HealthKit.h"
 #import "HKHealthStore+AAPLExtensions.h"
 #import "WorkoutActivityConversion.h"
+
+#ifdef HealthKitClinicalRecords_h
 #import "HealthKitClinicalRecords.h"
+#endif
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCNotLocalizedStringInspection"
@@ -1480,7 +1483,9 @@
  * @param command *CDVInvokedUrlCommand
  */
 - (void)queryClinicalSampleType:(CDVInvokedUrlCommand *)command {
+  #ifdef HealthKitClinicalRecords_h
   [HealthKitClinicalRecords queryClinicalSampleType:command delegate:self.commandDelegate];
+  #endif
 }
 
 /**
@@ -1489,7 +1494,9 @@
  * @param command *CDVInvokedUrlCommand
  */
 - (void)queryForClinicalRecordsFromSource:(CDVInvokedUrlCommand *)command {
+  #ifdef HealthKitClinicalRecords_h
   [HealthKitClinicalRecords queryForClinicalRecordsFromSource:command delegate:self.commandDelegate];
+  #endif
 }
 
 /**
@@ -1498,7 +1505,9 @@
  * @param command *CDVInvokedUrlCommand
  */
 - (void)queryForClinicalRecordsWithFHIRResourceType:(CDVInvokedUrlCommand *)command {
+  #ifdef HealthKitClinicalRecords_h
   [HealthKitClinicalRecords queryForClinicalRecordsWithFHIRResourceType:command delegate:self.commandDelegate];
+  #endif
 }
 
 /**
