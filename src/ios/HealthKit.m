@@ -2,8 +2,9 @@
 #import "HKHealthStore+AAPLExtensions.h"
 #import "WorkoutActivityConversion.h"
 
-#ifdef HealthKitClinicalRecords_h
+#if __has_include("HealthKitClinicalRecords.h")
 #import "HealthKitClinicalRecords.h"
+#define HKPLUGIN_CLINICAL_RECORDS
 #endif
 
 #pragma clang diagnostic push
@@ -1483,7 +1484,7 @@
  * @param command *CDVInvokedUrlCommand
  */
 - (void)queryClinicalSampleType:(CDVInvokedUrlCommand *)command {
-  #ifdef HealthKitClinicalRecords_h
+  #ifdef HKPLUGIN_CLINICAL_RECORDS
   [HealthKitClinicalRecords queryClinicalSampleType:command delegate:self.commandDelegate];
   #endif
 }
@@ -1494,7 +1495,7 @@
  * @param command *CDVInvokedUrlCommand
  */
 - (void)queryForClinicalRecordsFromSource:(CDVInvokedUrlCommand *)command {
-  #ifdef HealthKitClinicalRecords_h
+  #ifdef HKPLUGIN_CLINICAL_RECORDS
   [HealthKitClinicalRecords queryForClinicalRecordsFromSource:command delegate:self.commandDelegate];
   #endif
 }
@@ -1505,7 +1506,7 @@
  * @param command *CDVInvokedUrlCommand
  */
 - (void)queryForClinicalRecordsWithFHIRResourceType:(CDVInvokedUrlCommand *)command {
-  #ifdef HealthKitClinicalRecords_h
+  #ifdef HKPLUGIN_CLINICAL_RECORDS
   [HealthKitClinicalRecords queryForClinicalRecordsWithFHIRResourceType:command delegate:self.commandDelegate];
   #endif
 }
