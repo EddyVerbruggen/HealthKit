@@ -39,7 +39,7 @@ module.exports = function (ctx) {
       // add CLINICAL_READ_PERMISSION text to config.xml
       var tagPlatform = etree.findall('./platform[@name="ios"]');
       if (tagPlatform.length > 0) {
-        var tagEditConfig = et.Element('edit-config', { file: '*-Info.plist', mode: 'merge', target: 'NSHealthClinicalHealthRecordsShareUsageDescription' });
+        var tagEditConfig = et.Element('config-file', { target: '*-Info.plist', parent: 'NSHealthClinicalHealthRecordsShareUsageDescription' });
         var tagString = et.Element('string');
         tagString.text = usageDescription;
         tagEditConfig.append(tagString);
