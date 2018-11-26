@@ -34,7 +34,7 @@
 * `queryCorrelationType`
 * `deleteSamples`
 
-Read below about CLINICAL_READ_PERMISSION to use these
+Read below about `CLINICAL_READ_PERMISSION` to use these
 * `queryClinicalSampleType`
 * `queryForClinicalRecordsFromSource`
 * `queryForClinicalRecordsWithFHIRResourceType`
@@ -60,7 +60,9 @@ cordova plugin add com.telerik.plugins.healthkit --variable HEALTH_READ_PERMISSI
 
 If you would like to read clinical record data from the HealthKit store you will need to provide an extra variable during the plugin install.  The `CLINICAL_READ_PERMISSION` can be set to include the ability to read FHIR resources.  The value that is set here will be used in the `NSHealthClinicalHealthRecordsShareUsageDescription` key of your app's `info.plist` file.  It will be shown when your app asks for clinical record data from HealthKit.  Do not include the `CLINICAL_READ_PERMISSION` variable unless you really need access to the clinical record data otherwise Apple may reject your app.
 
-Here is an example - 
+You will also need to manually check the `Health Records` capability for your app in Xcode under the HealthKit capability.
+
+Here is an install example with `CLINICAL_READ_PERMISSION` - 
 ```bash
 cordova plugin add com.telerik.plugins.healthkit --variable HEALTH_READ_PERMISSION='App needs read access' --variable HEALTH_WRITE_PERMISSION='App needs write access' --variable CLINICAL_READ_PERMISSION='App needs read access' --save
 ```
