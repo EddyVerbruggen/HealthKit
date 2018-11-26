@@ -124,6 +124,16 @@
       'HKQuantityTypeIdentifierDietaryFatTotal'
     ];
 
+    // or any of these HKClinicalType for readTypes 
+    // use these to access health records (read only)
+    // HKClinicalTypeIdentifierAllergyRecord
+    // HKClinicalTypeIdentifierConditionRecord
+    // HKClinicalTypeIdentifierImmunizationRecord
+    // HKClinicalTypeIdentifierLabResultRecord
+    // HKClinicalTypeIdentifierMedicationRecord
+    // HKClinicalTypeIdentifierProcedureRecord
+    // HKClinicalTypeIdentifierVitalSignRecord
+
     window.plugins.healthkit.requestAuthorization(
         {
           readTypes: supportedTypes,
@@ -280,6 +290,77 @@
         },
         callback,
         callback
+    );
+  }
+
+  // used to query a specified clinical sample type
+  function queryClinicalSampleType() {
+    window.plugins.healthkit.queryClinicalSampleType(
+      {
+        'startDate': new Date(new Date().getTime() - 365 * 24 * 60 * 60 * 1000), // 365 days ago
+        'endDate': new Date(), // now
+        'sampleType': 'HKClinicalTypeIdentifierAllergyRecord',
+        // or any of these other HKClinicalType
+        // HKClinicalTypeIdentifierConditionRecord
+        // HKClinicalTypeIdentifierImmunizationRecord
+        // HKClinicalTypeIdentifierLabResultRecord
+        // HKClinicalTypeIdentifierMedicationRecord
+        // HKClinicalTypeIdentifierProcedureRecord
+        // HKClinicalTypeIdentifierVitalSignRecord
+      },
+      callback,
+      callback
+    );
+  }
+
+  // this is used to search for a specific FHIR resource type
+  // it uses predicateForClinicalRecordsWithFHIRResourceType (https://developer.apple.com/documentation/healthkit/hkquery/2999414-predicateforclinicalrecordswithf?language=objc)
+  // In most cases, there’s a one-to-one correspondance between the clinical record types and the FHIR resource types; 
+  // therefore, most queries already return samples from a single FHIR resource type. 
+  // However, queries for the HKClinicalTypeIdentifierMedicationRecord type can return records from the 
+  // HKFHIRResourceTypeMedicationOrder, HKFHIRResourceTypeMedicationDispense, and HKFHIRResourceTypeMedicationStatement FHIR resource types. 
+  // You can use this predicate to limit your query to one of these FHIR types.
+  function queryForClinicalRecordsWithFHIRResourceType() {
+    window.plugins.healthkit.queryForClinicalRecordsWithFHIRResourceType(
+      {
+        fhirResourceType: 'HKFHIRResourceTypeCondition',
+        sampleType: 'HKClinicalTypeIdentifierConditionRecord'
+        // or any of these other HKFHIRResourceType
+        // HKFHIRResourceTypeAllergyIntolerance',
+        // HKFHIRResourceTypeImmunization
+        // HKFHIRResourceTypeMedicationDispense
+        // HKFHIRResourceTypeMedicationOrder
+        // HKFHIRResourceTypeMedicationStatement
+        // HKFHIRResourceTypeObservation
+        // HKFHIRResourceTypeProcedure
+
+        // or any of these other HKClinicalType
+        // HKClinicalTypeIdentifierImmunizationRecord
+        // HKClinicalTypeIdentifierLabResultRecord
+        // HKClinicalTypeIdentifierMedicationRecord
+        // HKClinicalTypeIdentifierProcedureRecord
+        // HKClinicalTypeIdentifierVitalSignRecord
+      },
+      callback,
+      callback
+    );
+  }
+
+  // this is used to find a particular FHIR record
+  // it uses predicateForClinicalRecordsFromSource (https://developer.apple.com/documentation/healthkit/hkquery/2999413-predicateforclinicalrecordsfroms?language=objc)
+  function queryForClinicalRecordsFromSource() {
+    window.plugins.healthkit.queryForClinicalRecordsFromSource(
+      {
+        fhirResourceType: 'HKFHIRResourceTypeCondition',
+        sampleType: 'HKClinicalTypeIdentifierConditionRecord',
+        identifier: '42467', // the identifier of the FHIR resource
+        source: { // the provenance of this FHIR record
+          name: 'Sample Location C',
+          bundleIdentifier: 'com.apple.public.health.clinical.7D9AED77-AD3F-7801-5A65-59F537187C7D'
+        }
+      },
+      callback,
+      callback
     );
   }
 
