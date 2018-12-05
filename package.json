@@ -27,7 +27,7 @@
       "version": ">=3.0.0"
     }
   ],
-  "devDependencies": {
+  "dependencies": {
     "xcode": "^1.0.0"
   }
 }
