@@ -1,5 +1,7 @@
 module.exports = function (ctx) {
-  if (ctx.cmdLine.indexOf('CLINICAL_READ_PERMISSION') < 0) {
+  var isMeteorProject = ctx.opts.projectRoot.indexOf('/.meteor/') > -1;
+
+  if (ctx.cmdLine.indexOf('CLINICAL_READ_PERMISSION') < 0 && !isMeteorProject) {
     console.log('CLINICAL_READ_PERMISSION was not provided');
     return;
   }
@@ -7,13 +9,26 @@ module.exports = function (ctx) {
   try {
     var fs = ctx.requireCordovaModule('fs'),
       path = ctx.requireCordovaModule('path'),
-      deferral = ctx.requireCordovaModule('q').defer(),
       configXMLPath = path.join(ctx.opts.projectRoot, 'config.xml'),
       et = ctx.requireCordovaModule('elementtree'),
-      xcode = require('xcode');
+      xcode = require('xcode'),
+      usageDescription;
 
-
-    var usageDescription = ctx.cmdLine.split('CLINICAL_READ_PERMISSION=')[1].split('--')[0].trim();
+    if (isMeteorProject) {
+      var meteorProjectPath = ctx.opts.projectRoot.split('/.meteor/')[0];
+      var mobileConfigPath = path.join(meteorProjectPath, 'mobile-config.js');
+      var mobileConfigData = fs.readFileSync(mobileConfigPath, 'utf8');
+      var re = /CLINICAL_READ_PERMISSION?:\s*["|'](.*)['|"]/g;
+      var matches = re.exec(mobileConfigData);
+      if (matches && matches.length > 1) {
+        usageDescription = matches[1];
+      } else {
+        console.log('CLINICAL_READ_PERMISSION was not provided');
+        return;
+      }
+    } else {
+      usageDescription = ctx.cmdLine.split('CLINICAL_READ_PERMISSION=')[1].split('--')[0].trim();
+    }
 
     console.log('*** Installing HealthKitClinicalRecords ***');
     console.log('CLINICAL_READ_PERMISSION = ', usageDescription);
@@ -24,39 +39,28 @@ module.exports = function (ctx) {
     var srcPath = path.join(ctx.opts.projectRoot, 'plugins/com.telerik.plugins.healthkit/src/ios');
     var projPath = path.join(ctx.opts.projectRoot, 'platforms/ios', appName + '.xcodeproj/project.pbxproj');
     var xcodeProj = xcode.project(projPath);
+    xcodeProj.parseSync();
 
-    xcodeProj.parse(function (err) {
-      if (err) {
-        console.log('xcode proj parse error, err: ', err);
-        return deferral.reject(err);
-      }
+    xcodeProj.addHeaderFile(path.join(srcPath, 'HealthKitClinicalRecords.h'));
+    xcodeProj.addSourceFile(path.join(srcPath, 'HealthKitClinicalRecords.m'));
 
-      xcodeProj.addHeaderFile(path.join(srcPath, 'HealthKitClinicalRecords.h'));
-      xcodeProj.addSourceFile(path.join(srcPath, 'HealthKitClinicalRecords.m'));
+    fs.writeFileSync(projPath, xcodeProj.writeSync());
 
-      fs.writeFileSync(projPath, xcodeProj.writeSync());
+    // add CLINICAL_READ_PERMISSION text to config.xml
+    var tagPlatform = etree.findall('./platform[@name="ios"]');
+    if (tagPlatform.length > 0) {
+      var tagEditConfig = et.Element('config-file', { target: '*-Info.plist', parent: 'NSHealthClinicalHealthRecordsShareUsageDescription' });
+      var tagString = et.Element('string');
+      tagString.text = usageDescription;
+      tagEditConfig.append(tagString);
+      tagPlatform[0].append(tagEditConfig);
 
-      // add CLINICAL_READ_PERMISSION text to config.xml
-      var tagPlatform = etree.findall('./platform[@name="ios"]');
-      if (tagPlatform.length > 0) {
-        var tagEditConfig = et.Element('config-file', { target: '*-Info.plist', parent: 'NSHealthClinicalHealthRecordsShareUsageDescription' });
-        var tagString = et.Element('string');
-        tagString.text = usageDescription;
-        tagEditConfig.append(tagString);
-        tagPlatform[0].append(tagEditConfig);
+      configData = etree.write({ 'indent': 4 });
+      fs.writeFileSync(configXMLPath, configData);
+    }
 
-        configData = etree.write({ 'indent': 4 });
-        fs.writeFileSync(configXMLPath, configData);
-      }
-
-      console.log('*** DONE Installing HealthKitClinicalRecords ***');
-
-      return deferral.resolve();
-    });
+    console.log('*** DONE Installing HealthKitClinicalRecords ***');
   } catch(e) {
-    console.log('after-plugin-install error, e: ', JSON.stringify(e, null, 2));
-    deferral.reject(e);
+    console.log('healthkit after-plugin-install error, e: ', JSON.stringify(e, null, 2));
   }
-
-  return deferral.promise;
 };
