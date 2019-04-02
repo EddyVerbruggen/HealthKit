@@ -46,14 +46,26 @@ module.exports = function (ctx) {
 
     fs.writeFileSync(projPath, xcodeProj.writeSync());
 
-    // add CLINICAL_READ_PERMISSION text to config.xml
+    // enable health records
     var tagPlatform = etree.findall('./platform[@name="ios"]');
     if (tagPlatform.length > 0) {
+      // add CLINICAL_READ_PERMISSION text to config.xml
       var tagEditConfig = et.Element('config-file', { target: '*-Info.plist', parent: 'NSHealthClinicalHealthRecordsShareUsageDescription' });
       var tagString = et.Element('string');
       tagString.text = usageDescription;
       tagEditConfig.append(tagString);
       tagPlatform[0].append(tagEditConfig);
+
+      // add Health Records to entitlements
+      ['*Entitlements-Debug.plist', '*Entitlements-Release.plist'].forEach(function(fileName){
+        var healthRecordCapabilityConfig = et.Element('config-file', { target: fileName, parent: 'com.apple.developer.healthkit.access'});
+        var healthRecordArray = et.Element('array');
+        var healthRecordString = et.Element('string');
+        healthRecordString.text = 'health-records';
+        healthRecordArray.append(healthRecordString);
+        healthRecordCapabilityConfig.append(healthRecordArray);
+        tagPlatform[0].append(healthRecordCapabilityConfig);
+      });
 
       configData = etree.write({ 'indent': 4 });
       fs.writeFileSync(configXMLPath, configData);
