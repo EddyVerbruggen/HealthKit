@@ -7,10 +7,10 @@ module.exports = function (ctx) {
   }
 
   try {
-    var fs = ctx.requireCordovaModule('fs'),
-      path = ctx.requireCordovaModule('path'),
+    var fs = require('fs'),
+      path = require('path'),
       configXMLPath = path.join(ctx.opts.projectRoot, 'config.xml'),
-      et = ctx.requireCordovaModule('elementtree'),
+      et = require('elementtree'),
       xcode = require('xcode'),
       usageDescription;
 

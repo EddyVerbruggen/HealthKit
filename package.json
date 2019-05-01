@@ -28,6 +28,7 @@
     }
   ],
   "dependencies": {
+    "elementtree": "0.1.7",
     "xcode": "^1.0.0"
   }
 }
