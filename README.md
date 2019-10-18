@@ -34,6 +34,11 @@
 * `queryCorrelationType`
 * `deleteSamples`
 
+Read below about `CLINICAL_READ_PERMISSION` to use these
+* `queryClinicalSampleType`
+* `queryForClinicalRecordsFromSource`
+* `queryForClinicalRecordsWithFHIRResourceType`
+
 ### Resources
 
 * The official Apple documentation for [HealthKit can be found here](https://developer.apple.com/library/ios/documentation/HealthKit/Reference/HealthKit_Framework/index.html#//apple_ref/doc/uid/TP40014707).
@@ -52,6 +57,16 @@ Using the Cordova CLI?
 cordova plugin add com.telerik.plugins.healthkit --variable HEALTH_READ_PERMISSION='App needs read access' --variable HEALTH_WRITE_PERMISSION='App needs write access'
 ```
 `HEALTH_READ_PERMISSION` and `HEALTH_WRITE_PERMISSION` are shown when your app asks for access to data in HealthKit.
+
+If you would like to read clinical record data from the HealthKit store you will need to provide an extra variable during the plugin install.  The `CLINICAL_READ_PERMISSION` can be set to include the ability to read FHIR resources.  The value that is set here will be used in the `NSHealthClinicalHealthRecordsShareUsageDescription` key of your app's `info.plist` file.  It will be shown when your app asks for clinical record data from HealthKit.  Do not include the `CLINICAL_READ_PERMISSION` variable unless you really need access to the clinical record data otherwise Apple may reject your app.
+
+The `Health Records` capability will be enabled if the `CLINICAL_READ_PERMISSION` is provided.
+
+Here is an install example with `CLINICAL_READ_PERMISSION` -
+```bash
+cordova plugin add com.telerik.plugins.healthkit --variable HEALTH_READ_PERMISSION='App needs read access' --variable HEALTH_WRITE_PERMISSION='App needs write access' --variable CLINICAL_READ_PERMISSION='App needs read access' --save
+```
+
 
 #### Using PhoneGap Build?
 
@@ -76,7 +91,7 @@ PhoneGap Build has [recently migrated](https://blog.phonegap.com/phonegap-7-0-1-
     <plugin name="com.telerik.plugins.healthkit" spec="^0.5.5" >
         <variable name="HEALTH_READ_PERMISSION" value="App needs read access" />
         <variable name="HEALTH_WRITE_PERMISSION" value="App needs write access" />
-    </plugin>        
+    </plugin>
 </platform>
 ```
 

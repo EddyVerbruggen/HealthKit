@@ -26,5 +26,9 @@
       "name": "cordova",
       "version": ">=3.0.0"
     }
-  ]
+  ],
+  "dependencies": {
+    "elementtree": "0.1.7",
+    "xcode": "^1.0.0"
+  }
 }
