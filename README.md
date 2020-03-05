@@ -80,3 +80,6 @@ PhoneGap Build has [recently migrated](https://blog.phonegap.com/phonegap-7-0-1-
 </platform>
 ```
 
+#### Need Clinical Records Functionality (FHIR)?
+
+If you would like to read clinical record (FHIR) data from the HealthKit store you can use the [fork of this plugin here](https://github.com/rossmartin/HealthKit). Please see https://github.com/EddyVerbruggen/HealthKit/issues/113 for why this was functionality was removed from this plugin.
