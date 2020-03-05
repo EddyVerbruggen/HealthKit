@@ -2,16 +2,71 @@
 #import "HKHealthStore+AAPLExtensions.h"
 #import "WorkoutActivityConversion.h"
 
-#if __has_include("HealthKitClinicalRecords.h")
-#import "HealthKitClinicalRecords.h"
-#define HKPLUGIN_CLINICAL_RECORDS
-#endif
-
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCNotLocalizedStringInspection"
 #define HKPLUGIN_DEBUG
 
+#pragma mark Property Type Constants
+static NSString *const HKPluginError = @"HKPluginError";
+static NSString *const HKPluginKeyReadTypes = @"readTypes";
+static NSString *const HKPluginKeyWriteTypes = @"writeTypes";
+static NSString *const HKPluginKeyType = @"type";
+static NSString *const HKPluginKeyStartDate = @"startDate";
+static NSString *const HKPluginKeyEndDate = @"endDate";
+static NSString *const HKPluginKeySampleType = @"sampleType";
+static NSString *const HKPluginKeyAggregation = @"aggregation";
+static NSString *const HKPluginKeyUnit = @"unit";
+static NSString *const HKPluginKeyAmount = @"amount";
+static NSString *const HKPluginKeyValue = @"value";
+static NSString *const HKPluginKeyCorrelationType = @"correlationType";
+static NSString *const HKPluginKeyObjects = @"samples";
+static NSString *const HKPluginKeySourceName = @"sourceName";
+static NSString *const HKPluginKeySourceBundleId = @"sourceBundleId";
+static NSString *const HKPluginKeyMetadata = @"metadata";
+static NSString *const HKPluginKeyUUID = @"UUID";
+
 #pragma mark Categories
+
+// NSDictionary check if there is a value for a required key and populate an error if not present
+@interface NSDictionary (RequiredKey)
+- (BOOL)hasAllRequiredKeys:(NSArray<NSString *> *)keys error:(NSError **)error;
+@end
+
+// Public Interface extension category
+@interface HealthKit ()
++ (HKHealthStore *)sharedHealthStore;
+@end
+
+// Internal interface
+@interface HealthKit (Internal)
+- (void)checkAuthStatusWithCallbackId:(NSString *)callbackId
+                              forType:(HKObjectType *)type
+                        andCompletion:(void (^)(CDVPluginResult *result, NSString *innerCallbackId))completion;
+@end
+
+
+// Internal interface helper methods
+@interface HealthKit (InternalHelpers)
++ (NSString *)stringFromDate:(NSDate *)date;
+
++ (HKUnit *)getUnit:(NSString *)type expected:(NSString *)expected;
+
++ (HKObjectType *)getHKObjectType:(NSString *)elem;
+
++ (HKQuantityType *)getHKQuantityType:(NSString *)elem;
+
++ (HKSampleType *)getHKSampleType:(NSString *)elem;
+
+- (HKQuantitySample *)loadHKQuantitySampleFromInputDictionary:(NSDictionary *)inputDictionary error:(NSError **)error;
+
+- (HKCorrelation *)loadHKCorrelationFromInputDictionary:(NSDictionary *)inputDictionary error:(NSError **)error;
+
++ (HKQuantitySample *)getHKQuantitySampleWithStartDate:(NSDate *)startDate endDate:(NSDate *)endDate sampleTypeString:(NSString *)sampleTypeString unitTypeString:(NSString *)unitTypeString value:(double)value metadata:(NSDictionary *)metadata error:(NSError **)error;
+
+- (HKCorrelation *)getHKCorrelationWithStartDate:(NSDate *)startDate endDate:(NSDate *)endDate correlationTypeString:(NSString *)correlationTypeString objects:(NSSet *)objects metadata:(NSDictionary *)metadata error:(NSError **)error;
+
++ (void)triggerErrorCallbackWithMessage: (NSString *) message command: (CDVInvokedUrlCommand *) command delegate: (id<CDVCommandDelegate>) delegate;
+@end
 
 /**
  * Implementation of internal interface
@@ -129,7 +184,7 @@
     if (type != nil) {
         return type;
     }
-  
+
     if (@available(iOS 12.0, *)) {
       type = [HKObjectType clinicalTypeForIdentifier:elem];
       if (type != nil) {
@@ -189,7 +244,7 @@
             // Fallback on earlier versions
         }
     }
-  
+
     if (@available(iOS 12.0, *)) {
       type = [HKObjectType clinicalTypeForIdentifier:elem];
       if (type != nil) {
@@ -698,7 +753,8 @@
                         if ([workout respondsToSelector:@selector(sourceRevision)]) {
                             source = [[workout valueForKey:@"sourceRevision"] valueForKey:@"source"];
                         } else {
-                            source = workout.sourceRevision.source;
+                            //@TODO Update deprecated API call
+                            source = workout.source;
                         }
 
                         // TODO: use a float value, or switch to metric
@@ -1277,8 +1333,9 @@
                                                                           entry[HKPluginKeyEndDate] = [HealthKit stringFromDate:endSample];
                                                                           entry[HKPluginKeyUUID] = sample.UUID.UUIDString;
 
-                                                                          entry[HKPluginKeySourceName] = sample.sourceRevision.source.name;
-                                                                          entry[HKPluginKeySourceBundleId] = sample.sourceRevision.source.bundleIdentifier;
+                                                                          //@TODO Update deprecated API calls
+                                                                          entry[HKPluginKeySourceName] = sample.source.name;
+                                                                          entry[HKPluginKeySourceBundleId] = sample.source.bundleIdentifier;
 
                                                                           if (sample.metadata == nil || ![NSJSONSerialization isValidJSONObject:sample.metadata]) {
                                                                               entry[HKPluginKeyMetadata] = @{};
@@ -1308,6 +1365,33 @@
 
                                                                               HKWorkout *wsample = (HKWorkout *) sample;
                                                                               [entry setValue:@(wsample.duration) forKey:@"duration"];
+
+                                                                          } else {
+
+                                                                            if (@available(iOS 12.0, *)) {
+                                                                            
+                                                                                if ([sample isKindOfClass:[HKClinicalRecord class]]) {
+                                                                                    HKClinicalRecord *clinicalRecord = (HKClinicalRecord *) sample;
+                                                                                    NSError *err = nil;
+                                                                                    NSDictionary *fhirData = [NSJSONSerialization JSONObjectWithData:clinicalRecord.FHIRResource.data options:NSJSONReadingMutableContainers error:&err];
+                                                                                    
+                                                                                    if (err != nil) {
+                                                                                        dispatch_sync(dispatch_get_main_queue(), ^{
+                                                                                            [HealthKit triggerErrorCallbackWithMessage:err.localizedDescription command:command delegate:bSelf.commandDelegate];
+                                                                                        });
+                                                                                        return;
+                                                                                    } else {
+                                                                                        NSDictionary *fhirResource = @{
+                                                                                                        @"identifier": clinicalRecord.FHIRResource.identifier,
+                                                                                                        @"sourceURL": clinicalRecord.FHIRResource.sourceURL.absoluteString,
+                                                                                                        @"displayName": clinicalRecord.displayName,
+                                                                                                        @"data": fhirData
+                                                                                                    };
+                                                                                        entry[@"FHIRResource"] = fhirResource;
+                                                                                    }
+                                                                                }
+                                                                            
+                                                                            }
 
                                                                           }
 
@@ -1476,39 +1560,6 @@
     }];
 
 
-}
-
-/**
- * Query a specified clinical sample type
- *
- * @param command *CDVInvokedUrlCommand
- */
-- (void)queryClinicalSampleType:(CDVInvokedUrlCommand *)command {
-  #ifdef HKPLUGIN_CLINICAL_RECORDS
-  [HealthKitClinicalRecords queryClinicalSampleType:command delegate:self.commandDelegate];
-  #endif
-}
-
-/**
- * Search for a particular FHIR record
- *
- * @param command *CDVInvokedUrlCommand
- */
-- (void)queryForClinicalRecordsFromSource:(CDVInvokedUrlCommand *)command {
-  #ifdef HKPLUGIN_CLINICAL_RECORDS
-  [HealthKitClinicalRecords queryForClinicalRecordsFromSource:command delegate:self.commandDelegate];
-  #endif
-}
-
-/**
- * Search for a specific FHIR resource type
- *
- * @param command *CDVInvokedUrlCommand
- */
-- (void)queryForClinicalRecordsWithFHIRResourceType:(CDVInvokedUrlCommand *)command {
-  #ifdef HKPLUGIN_CLINICAL_RECORDS
-  [HealthKitClinicalRecords queryForClinicalRecordsWithFHIRResourceType:command delegate:self.commandDelegate];
-  #endif
 }
 
 /**

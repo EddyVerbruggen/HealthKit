@@ -1,25 +1,6 @@
 #import "Cordova/CDV.h"
 #import <HealthKit/HealthKit.h>
 
-#pragma mark Property Type Constants
-static NSString *const HKPluginError = @"HKPluginError";
-static NSString *const HKPluginKeyReadTypes = @"readTypes";
-static NSString *const HKPluginKeyWriteTypes = @"writeTypes";
-static NSString *const HKPluginKeyType = @"type";
-static NSString *const HKPluginKeyStartDate = @"startDate";
-static NSString *const HKPluginKeyEndDate = @"endDate";
-static NSString *const HKPluginKeySampleType = @"sampleType";
-static NSString *const HKPluginKeyAggregation = @"aggregation";
-static NSString *const HKPluginKeyUnit = @"unit";
-static NSString *const HKPluginKeyAmount = @"amount";
-static NSString *const HKPluginKeyValue = @"value";
-static NSString *const HKPluginKeyCorrelationType = @"correlationType";
-static NSString *const HKPluginKeyObjects = @"samples";
-static NSString *const HKPluginKeySourceName = @"sourceName";
-static NSString *const HKPluginKeySourceBundleId = @"sourceBundleId";
-static NSString *const HKPluginKeyMetadata = @"metadata";
-static NSString *const HKPluginKeyUUID = @"UUID";
-
 @interface HealthKit :CDVPlugin
 
 /**
@@ -142,27 +123,6 @@ static NSString *const HKPluginKeyUUID = @"UUID";
 - (void) querySampleTypeAggregated:(CDVInvokedUrlCommand*)command;
 
 /**
- * Query a specified clinical sample type
- *
- * @param command *CDVInvokedUrlCommand
- */
-- (void) queryClinicalSampleType:(CDVInvokedUrlCommand *)command;
-
-/**
- * Search for a particular FHIR record
- *
- * @param command *CDVInvokedUrlCommand
- */
-- (void) queryForClinicalRecordsFromSource:(CDVInvokedUrlCommand *)command;
-
-/**
- * Search for a specific FHIR resource type
- *
- * @param command *CDVInvokedUrlCommand
- */
-- (void) queryForClinicalRecordsWithFHIRResourceType:(CDVInvokedUrlCommand *)command;
-
-/**
  * Save quantity sample data
  *
  * @param command *CDVInvokedUrlCommand
@@ -190,45 +150,4 @@ static NSString *const HKPluginKeyUUID = @"UUID";
  */
 - (void) deleteSamples:(CDVInvokedUrlCommand*)command;
 
-@end
-
-// Public Interface extension category
-@interface HealthKit ()
-+ (HKHealthStore *)sharedHealthStore;
-@end
-
-// Internal interface
-@interface HealthKit (Internal)
-- (void)checkAuthStatusWithCallbackId:(NSString *)callbackId
-                              forType:(HKObjectType *)type
-                        andCompletion:(void (^)(CDVPluginResult *result, NSString *innerCallbackId))completion;
-@end
-
-
-// Internal interface helper methods
-@interface HealthKit (InternalHelpers)
-+ (NSString *)stringFromDate:(NSDate *)date;
-
-+ (HKUnit *)getUnit:(NSString *)type expected:(NSString *)expected;
-
-+ (HKObjectType *)getHKObjectType:(NSString *)elem;
-
-+ (HKQuantityType *)getHKQuantityType:(NSString *)elem;
-
-+ (HKSampleType *)getHKSampleType:(NSString *)elem;
-
-- (HKQuantitySample *)loadHKQuantitySampleFromInputDictionary:(NSDictionary *)inputDictionary error:(NSError **)error;
-
-- (HKCorrelation *)loadHKCorrelationFromInputDictionary:(NSDictionary *)inputDictionary error:(NSError **)error;
-
-+ (HKQuantitySample *)getHKQuantitySampleWithStartDate:(NSDate *)startDate endDate:(NSDate *)endDate sampleTypeString:(NSString *)sampleTypeString unitTypeString:(NSString *)unitTypeString value:(double)value metadata:(NSDictionary *)metadata error:(NSError **)error;
-
-- (HKCorrelation *)getHKCorrelationWithStartDate:(NSDate *)startDate endDate:(NSDate *)endDate correlationTypeString:(NSString *)correlationTypeString objects:(NSSet *)objects metadata:(NSDictionary *)metadata error:(NSError **)error;
-
-+ (void)triggerErrorCallbackWithMessage: (NSString *) message command: (CDVInvokedUrlCommand *) command delegate: (id<CDVCommandDelegate>) delegate;
-@end
-
-// NSDictionary check if there is a value for a required key and populate an error if not present
-@interface NSDictionary (RequiredKey)
-- (BOOL)hasAllRequiredKeys:(NSArray<NSString *> *)keys error:(NSError **)error;
 @end
