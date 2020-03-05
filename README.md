@@ -1,12 +1,16 @@
 # Cordova HealthKit Plugin
 
+[![NPM version][npm-image]][npm-url]
+[![Downloads][downloads-image]][npm-url]
+[![Twitter Follow][twitter-image]][twitter-url]
+
+[npm-image]:http://img.shields.io/npm/v/com.telerik.plugins.healthkit.svg
+[npm-url]:https://npmjs.org/package/com.telerik.plugins.healthkit
+[downloads-image]:http://img.shields.io/npm/dm/com.telerik.plugins.healthkit.svg
+[twitter-image]:https://img.shields.io/twitter/follow/eddyverbruggen.svg?style=social&label=Follow%20me
+[twitter-url]:https://twitter.com/eddyverbruggen
+
 <img src="img/healthkit-hero_2x.png" width="128px" height="128px"/>
-<table width="100%">
-  <tr>
-    <td width="100"><a href="http://plugins.telerik.com/plugin/healthkit"><img src="http://www.x-services.nl/github-images/telerik-verified-plugins-marketplace.png" width="97px" height="71px" alt="Marketplace logo"/></a></td>
-    <td>For a quick demo app and easy code samples, check out the plugin page at the Verified Plugins Marketplace: http://plugins.telerik.com/plugin/healthkit</td>
-  </tr>
-</table>
 
 ### Supported functions
 
