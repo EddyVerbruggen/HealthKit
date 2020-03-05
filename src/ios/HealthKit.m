@@ -488,8 +488,9 @@ static NSString *const HKPluginKeyUUID = @"UUID";
  * @param command *CDVInvokedUrlCommand
  */
 - (void)available:(CDVInvokedUrlCommand *)command {
+    __block HealthKit *bSelf = self;
     CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:[HKHealthStore isHealthDataAvailable]];
-    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+    [bSelf.commandDelegate sendPluginResult:result callbackId:command.callbackId];
 }
 
 /**
@@ -498,6 +499,7 @@ static NSString *const HKPluginKeyUUID = @"UUID";
  * @param command *CDVInvokedUrlCommand
  */
 - (void)requestAuthorization:(CDVInvokedUrlCommand *)command {
+    __block HealthKit *bSelf = self;
     NSMutableDictionary *args = command.arguments[0];
 
     // read types
@@ -519,7 +521,7 @@ static NSString *const HKPluginKeyUUID = @"UUID";
         if (type == nil) {
             CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"readTypes contains an invalid value"];
             [result setKeepCallbackAsBool:YES];
-            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+            [bSelf.commandDelegate sendPluginResult:result callbackId:command.callbackId];
             // not returning deliberately to be future proof; other permissions are still asked
         } else {
             [readDataTypes addObject:type];
