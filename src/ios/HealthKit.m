@@ -185,13 +185,6 @@ static NSString *const HKPluginKeyUUID = @"UUID";
         return type;
     }
 
-    if (@available(iOS 12.0, *)) {
-      type = [HKObjectType clinicalTypeForIdentifier:elem];
-      if (type != nil) {
-        return type;
-      }
-    }
-
     // @TODO | The fall through here is inefficient.
     // @TODO | It needs to be refactored so the same HK method isnt called twice
     return [HealthKit getHKSampleType:elem];
@@ -243,13 +236,6 @@ static NSString *const HKPluginKeyUUID = @"UUID";
         } else {
             // Fallback on earlier versions
         }
-    }
-
-    if (@available(iOS 12.0, *)) {
-      type = [HKObjectType clinicalTypeForIdentifier:elem];
-      if (type != nil) {
-        return type;
-      }
     }
 
     // leave this here for if/when apple adds other sample types
@@ -1365,33 +1351,6 @@ static NSString *const HKPluginKeyUUID = @"UUID";
 
                                                                               HKWorkout *wsample = (HKWorkout *) sample;
                                                                               [entry setValue:@(wsample.duration) forKey:@"duration"];
-
-                                                                          } else {
-
-                                                                            if (@available(iOS 12.0, *)) {
-                                                                            
-                                                                                if ([sample isKindOfClass:[HKClinicalRecord class]]) {
-                                                                                    HKClinicalRecord *clinicalRecord = (HKClinicalRecord *) sample;
-                                                                                    NSError *err = nil;
-                                                                                    NSDictionary *fhirData = [NSJSONSerialization JSONObjectWithData:clinicalRecord.FHIRResource.data options:NSJSONReadingMutableContainers error:&err];
-                                                                                    
-                                                                                    if (err != nil) {
-                                                                                        dispatch_sync(dispatch_get_main_queue(), ^{
-                                                                                            [HealthKit triggerErrorCallbackWithMessage:err.localizedDescription command:command delegate:bSelf.commandDelegate];
-                                                                                        });
-                                                                                        return;
-                                                                                    } else {
-                                                                                        NSDictionary *fhirResource = @{
-                                                                                                        @"identifier": clinicalRecord.FHIRResource.identifier,
-                                                                                                        @"sourceURL": clinicalRecord.FHIRResource.sourceURL.absoluteString,
-                                                                                                        @"displayName": clinicalRecord.displayName,
-                                                                                                        @"data": fhirData
-                                                                                                    };
-                                                                                        entry[@"FHIRResource"] = fhirResource;
-                                                                                    }
-                                                                                }
-                                                                            
-                                                                            }
 
                                                                           }
 
