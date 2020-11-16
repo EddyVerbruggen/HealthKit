@@ -61,13 +61,6 @@
       <true/>
     </config-file>
 
-    <header-file src="src/ios/WorkoutActivityConversion.h"/>
-    <source-file src="src/ios/WorkoutActivityConversion.m"/>
-    <header-file src="src/ios/HKHealthStore+AAPLExtensions.h"/>
-    <source-file src="src/ios/HKHealthStore+AAPLExtensions.m"/>
-    <header-file src="src/ios/HealthKit.h"/>
-    <source-file src="src/ios/HealthKit.m"/>
-
     <framework src="HealthKit.framework" weak="true" />
   </platform>
 
